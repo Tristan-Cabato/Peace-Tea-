@@ -55,24 +55,12 @@ public class StudentsForm extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable(){
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                // Make all cells non-editable
-                return false;
-            }
-        };
+        jTable1 = new javax.swing.JTable();
         jLabel7 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jTable2 = new javax.swing.JTable(){
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                // Make all cells non-editable
-                return false;
-            }
-        };
+        jTable2 = new javax.swing.JTable();
         jLabel8 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -81,6 +69,9 @@ public class StudentsForm extends javax.swing.JFrame {
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItem4 = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
+        jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem6 = new javax.swing.JMenuItem();
+        jMenuItem7 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         jMenuItem1.setText("jMenuItem1");
@@ -145,7 +136,12 @@ public class StudentsForm extends javax.swing.JFrame {
         });
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
+            new Object [][] {
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null}
+            },
             new String [] {
                 "ID", "Name", "Address", "Contact", "Gender", "Year Level"
             }
@@ -181,7 +177,12 @@ public class StudentsForm extends javax.swing.JFrame {
         });
 
         jTable2.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
+            new Object [][] {
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
+            },
             new String [] {
                 "ID", "Code", "Description", "Units", "Schedule"
             }
@@ -231,6 +232,31 @@ public class StudentsForm extends javax.swing.JFrame {
         jMenuBar1.add(jMenu1);
 
         jMenu3.setText("Databases");
+
+        jMenuItem5.setText("1st Semester");
+        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem5ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMenuItem5);
+
+        jMenuItem6.setText("2nd Semester");
+        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem6ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMenuItem6);
+
+        jMenuItem7.setText("Summer");
+        jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem7ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jMenuItem7);
+
         jMenuBar1.add(jMenu3);
 
         jMenu2.setText("Edit");
@@ -522,6 +548,213 @@ public class StudentsForm extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
+        // TODO add your handling code here:
+        // Add 1stSem to database
+        int year = Calendar.getInstance().get(Calendar.YEAR);
+        String database = "1stSem_Sy" + year + "_" + (year + 1);
+        String query = "CREATE DATABASE IF NOT EXISTS " + database + ";";
+        ESystem.st.execute(query);
+        if (!query.equals("")) {
+            JOptionPane.showMessageDialog(this, "Database Created: " + database);
+            query = "USE " + database + ";"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS students (" +
+            "studid INT, " +
+            "studname VARCHAR(100), " +
+            "studadd VARCHAR(100), " +
+            "studcrs VARCHAR(100), " +
+            "studgender VARCHAR(100), " +
+            "yrlvl INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS subjects (" +
+            "subjid INT, " +
+            "subjcode VARCHAR(100), " +
+            "subjdesc VARCHAR(100), " +
+            "subjunits INT, " +
+            "subjsched VARCHAR(100));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS teachers (" +
+            "Tid INT, " +
+            "Tname VARCHAR(100), " +
+            "Tdept VARCHAR(100), " +
+            "Tadd VARCHAR(100), " +
+            "Tcontact VARCHAR(100), " +
+            "Tstatus VARCHAR(100));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Assign (" +
+            "Tid INT, " +
+            "subjid INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Enroll (" +
+            "eid INT, " +
+            "studid INT, " +
+            "subjid INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Grades (" +
+            "GradeID INT, " +
+            "eid INT, " +
+            "Prelim TEXT, " +
+            "Midterm TEXT, " +
+            "Prefinal TEXT, " +
+            "Final TEXT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS TransactionCharges ("
+            + "TransID INT, " +
+            "Department TEXT, " +
+            "SubjUnits DECIMAL(10,2), " +
+            "Insurance DECIMAL(10,2), " +
+            "Computer DECIMAL(10,2), " +
+            "Laboratory DECIMAL(10,2), " +
+            "Cultural DECIMAL(10,2), " +
+            "Library DECIMAL(10,2), " +
+            "Facility DECIMAL(10,2));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Invoice ("
+            + "Invoicenum INT, "
+            + "studid INT, "
+            + "TransID INT);"; ESystem.st.execute(query);
+        }
+    }//GEN-LAST:event_jMenuItem5ActionPerformed
+
+    private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
+        // TODO add your handling code here:
+        // Add 2ndSem to database
+        int year = Calendar.getInstance().get(Calendar.YEAR);
+        String database = "2ndSem_Sy" + year + "_" + (year + 1);
+        String query = "CREATE DATABASE IF NOT EXISTS " + database + ";";
+        ESystem.st.execute(query);
+        if (!query.equals("")) {
+            JOptionPane.showMessageDialog(this, "Database Created:" + query);
+            query = "USE 2ndSem_Sy" + year + "_" + (year + 1) + ";"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS students (" +
+            "studid INT, " +
+            "studname VARCHAR(100), " +
+            "studadd VARCHAR(100), " +
+            "studcrs VARCHAR(100), " +
+            "studgender VARCHAR(100), " +
+            "yrlvl INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS subjects (" +
+            "subjid INT, " +
+            "subjcode VARCHAR(100), " +
+            "subjdesc VARCHAR(100), " +
+            "subjunits INT, " +
+            "subjsched VARCHAR(100));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS teachers (" +
+            "Tid INT, " +
+            "Tname VARCHAR(100), " +
+            "Tdept VARCHAR(100), " +
+            "Tadd VARCHAR(100), " +
+            "Tcontact VARCHAR(100), " +
+            "Tstatus VARCHAR(100));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Assign (" +
+            "Tid INT, " +
+            "subjid INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Enroll (" +
+            "eid INT, " +
+            "studid INT, " +
+            "subjid INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Grades (" +
+            "GradeID INT, " +
+            "eid INT, " +
+            "Prelim TEXT, " +
+            "Midterm TEXT, " +
+            "Prefinal TEXT, " +
+            "Final TEXT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS TransactionCharges ("
+            + "TransID INT, " +
+            "Department TEXT, " +
+            "SubjUnits DECIMAL(10,2), " +
+            "Insurance DECIMAL(10,2), " +
+            "Computer DECIMAL(10,2), " +
+            "Laboratory DECIMAL(10,2), " +
+            "Cultural DECIMAL(10,2), " +
+            "Library DECIMAL(10,2), " +
+            "Facility DECIMAL(10,2));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Invoice ("
+            + "Invoicenum INT, "
+            + "studid INT, "
+            + "TransID INT);"; ESystem.st.execute(query);
+        }
+    }//GEN-LAST:event_jMenuItem6ActionPerformed
+
+    private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
+        // TODO add your handling code here:
+        // Add Summer to database
+        int year = Calendar.getInstance().get(Calendar.YEAR);
+        String database = "Summer_Sy" + year + "_" + (year + 1);
+        String query = "CREATE DATABASE IF NOT EXISTS " + database + ";";
+        ESystem.st.execute(query);
+        if (!query.equals("")) {
+            JOptionPane.showMessageDialog(this, "Database Created:" + query);
+            query = "USE Summer_Sy" + year + "_" + (year + 1) + ";"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS students (" +
+            "studid INT, " +
+            "studname VARCHAR(100), " +
+            "studadd VARCHAR(100), " +
+            "studcrs VARCHAR(100), " +
+            "studgender VARCHAR(100), " +
+            "yrlvl INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS subjects (" +
+            "subjid INT, " +
+            "subjcode VARCHAR(100), " +
+            "subjdesc VARCHAR(100), " +
+            "subjunits INT, " +
+            "subjsched VARCHAR(100));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS teachers (" +
+            "Tid INT, " +
+            "Tname VARCHAR(100), " +
+            "Tdept VARCHAR(100), " +
+            "Tadd VARCHAR(100), " +
+            "Tcontact VARCHAR(100), " +
+            "Tstatus VARCHAR(100));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Assign (" +
+            "Tid INT, " +
+            "subjid INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Enroll (" +
+            "eid INT, " +
+            "studid INT, " +
+            "subjid INT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Grades (" +
+            "GradeID INT, " +
+            "eid INT, " +
+            "Prelim TEXT, " +
+            "Midterm TEXT, " +
+            "Prefinal TEXT, " +
+            "Final TEXT);"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS TransactionCharges ("
+            + "TransID INT, " +
+            "Department TEXT, " +
+            "SubjUnits DECIMAL(10,2), " +
+            "Insurance DECIMAL(10,2), " +
+            "Computer DECIMAL(10,2), " +
+            "Laboratory DECIMAL(10,2), " +
+            "Cultural DECIMAL(10,2), " +
+            "Library DECIMAL(10,2), " +
+            "Facility DECIMAL(10,2));"; ESystem.st.execute(query);
+
+            query = "CREATE TABLE IF NOT EXISTS Invoice ("
+            + "Invoicenum INT, "
+            + "studid INT, "
+            + "TransID INT);"; ESystem.st.execute(query);
+        }
+    }//GEN-LAST:event_jMenuItem7ActionPerformed
     
     public void showRecords() {
         DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
@@ -663,6 +896,9 @@ public class StudentsForm extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem5;
+    private javax.swing.JMenuItem jMenuItem6;
+    private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
