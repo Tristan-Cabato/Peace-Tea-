@@ -18,7 +18,7 @@ public class ESystem {
     }
     public static void DBConnect() {
         try {
-            db = "1stSem_Sy2025_2026";
+            db = "2ndSem_Sy2025_2026";
             uname = "root";
             pswd = "safi";
             // Use the actual password, this messed me up

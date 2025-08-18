@@ -5,6 +5,8 @@
 package com.mycompany.esystem;
 import java.awt.*;
 import java.sql.*;
+import java.util.Calendar;
+
 import javax.swing.*;
 import javax.swing.table.*;
 
@@ -552,70 +554,123 @@ public class StudentsForm extends javax.swing.JFrame {
     private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
         // TODO add your handling code here:
         // Add 1stSem to database
-        int year = Calendar.getInstance().get(Calendar.YEAR);
+        int year = Calendar.getInstance().get(Calendar.YEAR); // GotChanged
         String database = "1stSem_Sy" + year + "_" + (year + 1);
-        String query = "CREATE DATABASE IF NOT EXISTS " + database + ";";
-        ESystem.st.execute(query);
-        if (!query.equals("")) {
-            JOptionPane.showMessageDialog(this, "Database Created: " + database);
-            query = "USE " + database + ";"; ESystem.st.execute(query);
+        try {
+            ResultSet rs = ESystem.st.executeQuery("SHOW DATABASES LIKE '" + database + "'");
+            if (!rs.next()) {
+                String query = "CREATE DATABASE " + database + ";";
+                ESystem.st.execute(query);
+                JOptionPane.showMessageDialog(this, "Database Created: " + database);
+                query = "USE " + database + ";"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS students (" +
-            "studid INT, " +
-            "studname VARCHAR(100), " +
-            "studadd VARCHAR(100), " +
-            "studcrs VARCHAR(100), " +
-            "studgender VARCHAR(100), " +
-            "yrlvl INT);"; ESystem.st.execute(query);
+                // First create all tables without foreign keys
+                query = "CREATE TABLE IF NOT EXISTS students (" +
+                "ID INT PRIMARY KEY, " +
+                "Name VARCHAR(100) NOT NULL, " +
+                "Address VARCHAR(100), " +
+                "Contact INT, " +
+                "Gender VARCHAR(10), " +
+                "YearLevel INT" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS subjects (" +
-            "subjid INT, " +
-            "subjcode VARCHAR(100), " +
-            "subjdesc VARCHAR(100), " +
-            "subjunits INT, " +
-            "subjsched VARCHAR(100));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS subjects (" +
+                "ID INT PRIMARY KEY, " +
+                "Code VARCHAR(20) NOT NULL, " +
+                "Description VARCHAR(100) NOT NULL, " +
+                "Units INT, " +
+                "Schedule VARCHAR(50)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS teachers (" +
-            "Tid INT, " +
-            "Tname VARCHAR(100), " +
-            "Tdept VARCHAR(100), " +
-            "Tadd VARCHAR(100), " +
-            "Tcontact VARCHAR(100), " +
-            "Tstatus VARCHAR(100));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS teachers (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "Name VARCHAR(100), " +
+                "Address VARCHAR(100), " +
+                "Contact INT, " +
+                "Department VARCHAR(100), " +
+                "UNIQUE (ID)" +
+                // "Status VARCHAR(100)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Assign (" +
-            "Tid INT, " +
-            "subjid INT);"; ESystem.st.execute(query);
+                // Create tables without foreign key constraints first
+                query = "CREATE TABLE IF NOT EXISTS Enroll (" +
+                "eid INT NOT NULL, " +
+                "studid INT NOT NULL, " +
+                "subjid INT NOT NULL, " +
+                "PRIMARY KEY (eid), " +
+                "UNIQUE (studid, subjid)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Enroll (" +
-            "eid INT, " +
-            "studid INT, " +
-            "subjid INT);"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS Assign (" +
+                "tid INT NOT NULL, " +
+                "subid INT NOT NULL, " +
+                "PRIMARY KEY (tid, subid), " +
+                "UNIQUE (subid), " +
+                "FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, " +
+                "FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Grades (" +
-            "GradeID INT, " +
-            "eid INT, " +
-            "Prelim TEXT, " +
-            "Midterm TEXT, " +
-            "Prefinal TEXT, " +
-            "Final TEXT);"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS Grades (" +
+                "GradeID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "eid INT NOT NULL, " +
+                "Prelim TEXT, " +
+                "Midterm TEXT, " +
+                "Prefinal TEXT, " +
+                "Final TEXT, " +
+                "UNIQUE (eid), " +
+                "FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE" +
+                ")";
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS TransactionCharges ("
-            + "TransID INT, " +
-            "Department TEXT, " +
-            "SubjUnits DECIMAL(10,2), " +
-            "Insurance DECIMAL(10,2), " +
-            "Computer DECIMAL(10,2), " +
-            "Laboratory DECIMAL(10,2), " +
-            "Cultural DECIMAL(10,2), " +
-            "Library DECIMAL(10,2), " +
-            "Facility DECIMAL(10,2));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS TransactionCharges (" +
+                "TransID INT, " +
+                "Department TEXT, " +
+                "SubjUnits DECIMAL(10,2), " +
+                "Insurance DECIMAL(10,2), " +
+                "Computer DECIMAL(10,2), " +
+                "Laboratory DECIMAL(10,2), " +
+                "Cultural DECIMAL(10,2), " +
+                "Library DECIMAL(10,2), " +
+                "Facility DECIMAL(10,2)" +
+                ")";
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Invoice ("
-            + "Invoicenum INT, "
-            + "studid INT, "
-            + "TransID INT);"; ESystem.st.execute(query);
-        }
+                query = "CREATE TABLE IF NOT EXISTS Invoice (" +
+                "Invoicenum INT, " +
+                "studid INT, " +
+                "TransID INT" +
+                ")";
+                ESystem.st.execute(query);
+
+                // Now add foreign key constraints
+                query = "ALTER TABLE Enroll " +
+                        "ADD CONSTRAINT fk_enroll_student " +
+                        "FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, " +
+                        "ADD CONSTRAINT fk_enroll_subject " +
+                        "FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE";
+                ESystem.st.execute(query);
+
+                query = "ALTER TABLE Assign " +
+                        "ADD CONSTRAINT fk_assign_teacher " +
+                        "FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, " +
+                        "ADD CONSTRAINT fk_assign_subject " +
+                        "FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE";
+                ESystem.st.execute(query);
+
+            } else {
+                JOptionPane.showMessageDialog(this, "Database already exists: " + database);
+                ESystem.st.execute("USE " + database + ";");
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            System.out.println("Error creating database: " + e.getMessage());
+        }  
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
     private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
@@ -623,68 +678,121 @@ public class StudentsForm extends javax.swing.JFrame {
         // Add 2ndSem to database
         int year = Calendar.getInstance().get(Calendar.YEAR);
         String database = "2ndSem_Sy" + year + "_" + (year + 1);
-        String query = "CREATE DATABASE IF NOT EXISTS " + database + ";";
-        ESystem.st.execute(query);
-        if (!query.equals("")) {
-            JOptionPane.showMessageDialog(this, "Database Created:" + query);
-            query = "USE 2ndSem_Sy" + year + "_" + (year + 1) + ";"; ESystem.st.execute(query);
+        try {
+            ResultSet rs = ESystem.st.executeQuery("SHOW DATABASES LIKE '" + database + "'");
+            if (!rs.next()) {
+                String query = "CREATE DATABASE " + database + ";";
+                ESystem.st.execute(query);
+                JOptionPane.showMessageDialog(this, "Database Created: " + database);
+                query = "USE " + database + ";"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS students (" +
-            "studid INT, " +
-            "studname VARCHAR(100), " +
-            "studadd VARCHAR(100), " +
-            "studcrs VARCHAR(100), " +
-            "studgender VARCHAR(100), " +
-            "yrlvl INT);"; ESystem.st.execute(query);
+                // First create all tables without foreign keys
+                query = "CREATE TABLE IF NOT EXISTS students (" +
+                "ID INT PRIMARY KEY, " +
+                "Name VARCHAR(100) NOT NULL, " +
+                "Address VARCHAR(100), " +
+                "Contact INT, " +
+                "Gender VARCHAR(10), " +
+                "YearLevel INT" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS subjects (" +
-            "subjid INT, " +
-            "subjcode VARCHAR(100), " +
-            "subjdesc VARCHAR(100), " +
-            "subjunits INT, " +
-            "subjsched VARCHAR(100));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS subjects (" +
+                "ID INT PRIMARY KEY, " +
+                "Code VARCHAR(20) NOT NULL, " +
+                "Description VARCHAR(100) NOT NULL, " +
+                "Units INT, " +
+                "Schedule VARCHAR(50)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS teachers (" +
-            "Tid INT, " +
-            "Tname VARCHAR(100), " +
-            "Tdept VARCHAR(100), " +
-            "Tadd VARCHAR(100), " +
-            "Tcontact VARCHAR(100), " +
-            "Tstatus VARCHAR(100));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS teachers (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "Name VARCHAR(100), " +
+                "Address VARCHAR(100), " +
+                "Contact INT, " +
+                "Department VARCHAR(100), " +
+                "UNIQUE (ID)" +
+                // "Status VARCHAR(100)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Assign (" +
-            "Tid INT, " +
-            "subjid INT);"; ESystem.st.execute(query);
+                // Create tables without foreign key constraints first
+                query = "CREATE TABLE IF NOT EXISTS Enroll (" +
+                "eid INT NOT NULL, " +
+                "studid INT NOT NULL, " +
+                "subjid INT NOT NULL, " +
+                "PRIMARY KEY (eid), " +
+                "UNIQUE (studid, subjid)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Enroll (" +
-            "eid INT, " +
-            "studid INT, " +
-            "subjid INT);"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS Assign (" +
+                "tid INT NOT NULL, " +
+                "subid INT NOT NULL, " +
+                "PRIMARY KEY (tid, subid), " +
+                "UNIQUE (subid), " +
+                "FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, " +
+                "FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Grades (" +
-            "GradeID INT, " +
-            "eid INT, " +
-            "Prelim TEXT, " +
-            "Midterm TEXT, " +
-            "Prefinal TEXT, " +
-            "Final TEXT);"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS Grades (" +
+                "GradeID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "eid INT NOT NULL, " +
+                "Prelim TEXT, " +
+                "Midterm TEXT, " +
+                "Prefinal TEXT, " +
+                "Final TEXT, " +
+                "UNIQUE (eid), " +
+                "FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE" +
+                ")";
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS TransactionCharges ("
-            + "TransID INT, " +
-            "Department TEXT, " +
-            "SubjUnits DECIMAL(10,2), " +
-            "Insurance DECIMAL(10,2), " +
-            "Computer DECIMAL(10,2), " +
-            "Laboratory DECIMAL(10,2), " +
-            "Cultural DECIMAL(10,2), " +
-            "Library DECIMAL(10,2), " +
-            "Facility DECIMAL(10,2));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS TransactionCharges (" +
+                "TransID INT, " +
+                "Department TEXT, " +
+                "SubjUnits DECIMAL(10,2), " +
+                "Insurance DECIMAL(10,2), " +
+                "Computer DECIMAL(10,2), " +
+                "Laboratory DECIMAL(10,2), " +
+                "Cultural DECIMAL(10,2), " +
+                "Library DECIMAL(10,2), " +
+                "Facility DECIMAL(10,2)" +
+                ")";
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Invoice ("
-            + "Invoicenum INT, "
-            + "studid INT, "
-            + "TransID INT);"; ESystem.st.execute(query);
-        }
+                query = "CREATE TABLE IF NOT EXISTS Invoice (" +
+                "Invoicenum INT, " +
+                "studid INT, " +
+                "TransID INT" +
+                ")";
+                ESystem.st.execute(query);
+
+                // Now add foreign key constraints
+                query = "ALTER TABLE Enroll " +
+                        "ADD CONSTRAINT fk_enroll_student " +
+                        "FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, " +
+                        "ADD CONSTRAINT fk_enroll_subject " +
+                        "FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE";
+                ESystem.st.execute(query);
+
+                query = "ALTER TABLE Assign " +
+                        "ADD CONSTRAINT fk_assign_teacher " +
+                        "FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, " +
+                        "ADD CONSTRAINT fk_assign_subject " +
+                        "FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE";
+                ESystem.st.execute(query);
+
+            } else {
+                JOptionPane.showMessageDialog(this, "Database already exists: " + database);
+                ESystem.st.execute("USE " + database + ";");
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            System.out.println("Error creating database: " + e.getMessage());
+        }  
     }//GEN-LAST:event_jMenuItem6ActionPerformed
 
     private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
@@ -692,68 +800,121 @@ public class StudentsForm extends javax.swing.JFrame {
         // Add Summer to database
         int year = Calendar.getInstance().get(Calendar.YEAR);
         String database = "Summer_Sy" + year + "_" + (year + 1);
-        String query = "CREATE DATABASE IF NOT EXISTS " + database + ";";
-        ESystem.st.execute(query);
-        if (!query.equals("")) {
-            JOptionPane.showMessageDialog(this, "Database Created:" + query);
-            query = "USE Summer_Sy" + year + "_" + (year + 1) + ";"; ESystem.st.execute(query);
+        try {
+            ResultSet rs = ESystem.st.executeQuery("SHOW DATABASES LIKE '" + database + "'");
+            if (!rs.next()) {
+                String query = "CREATE DATABASE " + database + ";";
+                ESystem.st.execute(query);
+                JOptionPane.showMessageDialog(this, "Database Created: " + database);
+                query = "USE " + database + ";"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS students (" +
-            "studid INT, " +
-            "studname VARCHAR(100), " +
-            "studadd VARCHAR(100), " +
-            "studcrs VARCHAR(100), " +
-            "studgender VARCHAR(100), " +
-            "yrlvl INT);"; ESystem.st.execute(query);
+                // First create all tables without foreign keys
+                query = "CREATE TABLE IF NOT EXISTS students (" +
+                "ID INT PRIMARY KEY, " +
+                "Name VARCHAR(100) NOT NULL, " +
+                "Address VARCHAR(100), " +
+                "Contact INT, " +
+                "Gender VARCHAR(10), " +
+                "YearLevel INT" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS subjects (" +
-            "subjid INT, " +
-            "subjcode VARCHAR(100), " +
-            "subjdesc VARCHAR(100), " +
-            "subjunits INT, " +
-            "subjsched VARCHAR(100));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS subjects (" +
+                "ID INT PRIMARY KEY, " +
+                "Code VARCHAR(20) NOT NULL, " +
+                "Description VARCHAR(100) NOT NULL, " +
+                "Units INT, " +
+                "Schedule VARCHAR(50)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS teachers (" +
-            "Tid INT, " +
-            "Tname VARCHAR(100), " +
-            "Tdept VARCHAR(100), " +
-            "Tadd VARCHAR(100), " +
-            "Tcontact VARCHAR(100), " +
-            "Tstatus VARCHAR(100));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS teachers (" +
+                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "Name VARCHAR(100), " +
+                "Address VARCHAR(100), " +
+                "Contact INT, " +
+                "Department VARCHAR(100), " +
+                "UNIQUE (ID)" +
+                // "Status VARCHAR(100)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Assign (" +
-            "Tid INT, " +
-            "subjid INT);"; ESystem.st.execute(query);
+                // Create tables without foreign key constraints first
+                query = "CREATE TABLE IF NOT EXISTS Enroll (" +
+                "eid INT NOT NULL, " +
+                "studid INT NOT NULL, " +
+                "subjid INT NOT NULL, " +
+                "PRIMARY KEY (eid), " +
+                "UNIQUE (studid, subjid)" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Enroll (" +
-            "eid INT, " +
-            "studid INT, " +
-            "subjid INT);"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS Assign (" +
+                "tid INT NOT NULL, " +
+                "subid INT NOT NULL, " +
+                "PRIMARY KEY (tid, subid), " +
+                "UNIQUE (subid), " +
+                "FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, " +
+                "FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE" +
+                ")"; 
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Grades (" +
-            "GradeID INT, " +
-            "eid INT, " +
-            "Prelim TEXT, " +
-            "Midterm TEXT, " +
-            "Prefinal TEXT, " +
-            "Final TEXT);"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS Grades (" +
+                "GradeID INT AUTO_INCREMENT PRIMARY KEY, " +
+                "eid INT NOT NULL, " +
+                "Prelim TEXT, " +
+                "Midterm TEXT, " +
+                "Prefinal TEXT, " +
+                "Final TEXT, " +
+                "UNIQUE (eid), " +
+                "FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE" +
+                ")";
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS TransactionCharges ("
-            + "TransID INT, " +
-            "Department TEXT, " +
-            "SubjUnits DECIMAL(10,2), " +
-            "Insurance DECIMAL(10,2), " +
-            "Computer DECIMAL(10,2), " +
-            "Laboratory DECIMAL(10,2), " +
-            "Cultural DECIMAL(10,2), " +
-            "Library DECIMAL(10,2), " +
-            "Facility DECIMAL(10,2));"; ESystem.st.execute(query);
+                query = "CREATE TABLE IF NOT EXISTS TransactionCharges (" +
+                "TransID INT, " +
+                "Department TEXT, " +
+                "SubjUnits DECIMAL(10,2), " +
+                "Insurance DECIMAL(10,2), " +
+                "Computer DECIMAL(10,2), " +
+                "Laboratory DECIMAL(10,2), " +
+                "Cultural DECIMAL(10,2), " +
+                "Library DECIMAL(10,2), " +
+                "Facility DECIMAL(10,2)" +
+                ")";
+                ESystem.st.execute(query);
 
-            query = "CREATE TABLE IF NOT EXISTS Invoice ("
-            + "Invoicenum INT, "
-            + "studid INT, "
-            + "TransID INT);"; ESystem.st.execute(query);
-        }
+                query = "CREATE TABLE IF NOT EXISTS Invoice (" +
+                "Invoicenum INT, " +
+                "studid INT, " +
+                "TransID INT" +
+                ")";
+                ESystem.st.execute(query);
+
+                // Now add foreign key constraints
+                query = "ALTER TABLE Enroll " +
+                        "ADD CONSTRAINT fk_enroll_student " +
+                        "FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, " +
+                        "ADD CONSTRAINT fk_enroll_subject " +
+                        "FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE";
+                ESystem.st.execute(query);
+
+                query = "ALTER TABLE Assign " +
+                        "ADD CONSTRAINT fk_assign_teacher " +
+                        "FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, " +
+                        "ADD CONSTRAINT fk_assign_subject " +
+                        "FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE";
+                ESystem.st.execute(query);
+
+            } else {
+                JOptionPane.showMessageDialog(this, "Database already exists: " + database);
+                ESystem.st.execute("USE " + database + ";");
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            System.out.println("Error creating database: " + e.getMessage());
+        }  
     }//GEN-LAST:event_jMenuItem7ActionPerformed
     
     public void showRecords() {
