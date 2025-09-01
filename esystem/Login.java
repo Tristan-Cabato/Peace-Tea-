@@ -12,6 +12,8 @@ import javax.swing.*;
  */
 public class Login extends javax.swing.JFrame {
     boolean loggedIn = false;
+    private String loggedInUsername;
+    private String loggedInPassword;
 
     /**
      * Creates new form Login
@@ -149,13 +151,14 @@ public class Login extends javax.swing.JFrame {
         }
         
         try {
-            String url = "jdbc:mysql://10.4.44.47:3306/";
+            String url = "jdbc:mysql://" + ESystem.hostAddress + ":" + ESystem.hostPort + "/";
             Connection testConn = null;
             try {
                 testConn = DriverManager.getConnection(url, username, password);
-                
                 System.out.println("MySQL Login Successful!");
                 loggedIn = true;
+                this.loggedInUsername = username;
+                this.loggedInPassword = password;
 
                 try (Statement stmt = testConn.createStatement();
                      ResultSet rs = stmt.executeQuery("SHOW DATABASES")) {
@@ -205,10 +208,31 @@ public class Login extends javax.swing.JFrame {
         }
         
         try {
-            if (ESystem.DBConnect(selectedDb, "root", "safi")) {
-                StudentsForm studentsForm = new StudentsForm();
-                studentsForm.setVisible(true);
-                
+            if (ESystem.DBConnect(selectedDb, this.loggedInUsername, this.loggedInPassword)) {
+                // Determine if current DB user corresponds to a student account
+                boolean isStudent = false;
+                boolean isTeacher = false;
+                try (PreparedStatement ps = ESystem.con.prepareStatement(
+                        "SELECT Studid FROM students WHERE CONCAT(Studid, Name) = ? LIMIT 1")) {
+                    ps.setString(1, ESystem.currentUser);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        isStudent = rs.next();
+                    }
+                } catch (SQLException e) {
+                    // If students table is missing or query fails, assume not a student
+                    System.err.println("Role check error: " + e.getMessage());
+                }
+
+                if (isStudent) {
+                    StudentRegistration registrationForm = new StudentRegistration();
+                    registrationForm.setVisible(true);
+                } else if (isTeacher) {
+                    GradeForm gradeForm = new GradeForm();
+                    gradeForm.setVisible(true);
+                } else {
+                    StudentsForm studentsForm = new StudentsForm();
+                    studentsForm.setVisible(true);
+                }
                 this.dispose();
             } else {
                 JOptionPane.showMessageDialog(null, "Failed to connect to database: " + selectedDb);

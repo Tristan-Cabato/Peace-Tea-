@@ -1,5 +1,9 @@
 package com.mycompany.esystem;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 
 public class ESystem {
@@ -9,6 +13,10 @@ public class ESystem {
 
     public static String currentDB;
     public static String currentUser;
+    public static String hostAddress = "192.168.1.193";
+    public static String usedHostAddress = "LAPTOP-7AGILLAO";
+        // Check the terminal upon running
+    public static int hostPort = 3306;
     
     public static void main(String[] args) {
         Login loginForm = new Login();
@@ -21,15 +29,20 @@ public class ESystem {
                 try { con.close(); } catch (SQLException e) {}
             } Class.forName("com.mysql.cj.jdbc.Driver");
             String url = String.format(
-                "jdbc:mysql://10.4.44.47:3306/%s?zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&allowPublicKeyRetrieval=true",
-                db
+                "jdbc:mysql://%s:%d/%s?zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&allowPublicKeyRetrieval=true",
+                hostAddress, hostPort, db
             );
             java.util.Properties props = new java.util.Properties();
             props.setProperty("user", username);
             props.setProperty("password", password);
-            props.setProperty("useSSL", "false"); // idk what this is
+            props.setProperty("useSSL", "false");
             
             con = DriverManager.getConnection(url, props);
+                try {
+                    System.out.println("Connected as: " + ESystem.con.getMetaData().getUserName());
+                } catch (SQLException e) {
+                    System.err.println("Unexpected error: " + e.getMessage());
+                }
             st = con.createStatement();
             st.execute("SELECT 1");
             

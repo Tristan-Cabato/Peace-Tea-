@@ -10,8 +10,6 @@ import java.util.Calendar;
 import javax.swing.*;
 import javax.swing.table.*;
 
-import com.mycompany.esystem.Enrolled;
-
 /**
  *
  * @author tcabato
@@ -55,7 +53,7 @@ public class StudentsForm extends javax.swing.JFrame {
         jLabel6 = new javax.swing.JLabel();
         save = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
+        delete = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
@@ -131,10 +129,10 @@ public class StudentsForm extends javax.swing.JFrame {
             }
         });
 
-        jButton3.setText("Delete");
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
+        delete.setText("Delete");
+        delete.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
+                deleteActionPerformed(evt);
             }
         });
 
@@ -299,7 +297,7 @@ public class StudentsForm extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addComponent(jButton2)
-                                .addComponent(jButton3))
+                                .addComponent(delete))
                             .addComponent(jLabel2))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -369,7 +367,7 @@ public class StudentsForm extends javax.swing.JFrame {
                             .addComponent(jButton2)
                             .addComponent(jButton5))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton3)
+                        .addComponent(delete)
                         .addGap(0, 135, Short.MAX_VALUE))
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -396,20 +394,20 @@ public class StudentsForm extends javax.swing.JFrame {
             
             String username = String.valueOf(student.Studid) + Name.getText();
             String password = "AdDU" + Name.getText();
-            String currentDB = ESystem.currentDB;
+            // String currentDB = ESystem.currentDB;
             
             try {
                 String createUserSQL = String.format(
-                    "CREATE USER '%s'@'10.4.44.47' IDENTIFIED BY '%s'", 
-                    username, password);
+                    "CREATE USER '%s'@'%s' IDENTIFIED BY '%s';", 
+                    username, ESystem.usedHostAddress, password);
                 ESystem.st.executeUpdate(createUserSQL);
                 
                 // Grant privileges
                 String grantSQL = String.format(
-                    "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'10.4.44.47'", 
-                    currentDB, username);
+                    "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'%s';", 
+                    ESystem.currentDB, username, ESystem.usedHostAddress);
                 ESystem.st.executeUpdate(grantSQL);
-                ESystem.st.executeUpdate("FLUSH PRIVILEGES");
+                ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 
                 System.out.println("User created successfully");
                 
@@ -420,7 +418,7 @@ public class StudentsForm extends javax.swing.JFrame {
         } catch (Exception ex) {
             System.err.println("Error: " + ex.getMessage());
         }
-    }//GEN-LAST:event_saveActionPerformed
+    }                                    
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
@@ -429,7 +427,7 @@ public class StudentsForm extends javax.swing.JFrame {
         showRecords();
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {
+    private void deleteActionPerformed(java.awt.event.ActionEvent evt) {
         if (Studid.getText().trim().isEmpty()) {
             System.err.println("Error: Student ID is empty");
             return;
@@ -450,9 +448,9 @@ public class StudentsForm extends javax.swing.JFrame {
             
             if (username != null) {
                 try {
-                    String dropUserSQL = String.format("DROP USER IF EXISTS '%s'@'%%'", username);
+                    String dropUserSQL = String.format("DROP USER '%s'@'%s';", username, ESystem.usedHostAddress);
                     ESystem.st.executeUpdate(dropUserSQL);
-                    ESystem.st.executeUpdate("FLUSH PRIVILEGES");
+                    ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 } catch (SQLException ex) { 
                     System.err.println("Error deleting database user: " + ex.getMessage()); 
                 }
@@ -463,6 +461,7 @@ public class StudentsForm extends javax.swing.JFrame {
         } catch (Exception ex) { 
             System.err.println("Error: " + ex.getMessage()); 
         }
+        showRecords();
     }                                        
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
@@ -1093,9 +1092,9 @@ public class StudentsForm extends javax.swing.JFrame {
     private javax.swing.JTextField Name;
     private javax.swing.JTextField Studid;
     private javax.swing.JTextField YearLevel;
+    private javax.swing.JButton delete;
     private javax.swing.Box.Filler filler1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;

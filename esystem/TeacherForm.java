@@ -3,12 +3,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.mycompany.esystem;
-
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
-import com.mycompany.esystem.Assign;
 
 import java.awt.*;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -42,9 +41,9 @@ public class TeacherForm extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
+        save = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
+        delete = new javax.swing.JButton();
         Tid = new javax.swing.JTextField();
         Tname = new javax.swing.JTextField();
         Tadd = new javax.swing.JTextField();
@@ -74,10 +73,10 @@ public class TeacherForm extends javax.swing.JFrame {
 
         jLabel6.setText("Teacher Contact");
 
-        jButton1.setText("Save");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        save.setText("Save");
+        save.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                saveActionPerformed(evt);
             }
         });
 
@@ -88,10 +87,10 @@ public class TeacherForm extends javax.swing.JFrame {
             }
         });
 
-        jButton3.setText("Delete");
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
+        delete.setText("Delete");
+        delete.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
+                deleteActionPerformed(evt);
             }
         });
 
@@ -148,14 +147,14 @@ public class TeacherForm extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(jTable2);
 
-        jButton4.setText("Assign Subject");
+        jButton4.setText("Drop Subject");
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton4ActionPerformed(evt);
             }
         });
 
-        jButton5.setText("Drop Subject");
+        jButton5.setText("Assign Subject");
         jButton5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton5ActionPerformed(evt);
@@ -207,11 +206,11 @@ public class TeacherForm extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(jButton4))
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jButton1)
+                                .addComponent(save)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(jButton2)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton3)))
+                                .addComponent(delete)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel8)
@@ -256,9 +255,9 @@ public class TeacherForm extends javax.swing.JFrame {
                         .addGap(42, 42, 42))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton1)
+                            .addComponent(save)
                             .addComponent(jButton2)
-                            .addComponent(jButton3))
+                            .addComponent(delete))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jButton5)
@@ -269,13 +268,39 @@ public class TeacherForm extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        Teacher teacher = new Teacher();
-        teacher.SaveRecord(teacher.Tid, Tname.getText(), Tadd.getText(), 
-                         Integer.valueOf(Tcontact.getText()), Tdept.getText());
-        showRecords();
-        showClassList();
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void saveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveActionPerformed
+        try {
+            Teacher teacher = new Teacher();
+            teacher.SaveRecord(teacher.Tid, Tname.getText(), Tadd.getText(), 
+                Integer.parseInt(Tcontact.getText()), Tdept.getText());
+            
+            String username = String.valueOf(teacher.Tid) + Tname.getText();
+            String password = "AdDU" + Tname.getText();
+            // String currentDB = ESystem.currentDB;
+            
+            try {
+                String createUserSQL = String.format(
+                    "CREATE USER '%s'@'%s' IDENTIFIED BY '%s';", 
+                    username, ESystem.usedHostAddress, password);
+                ESystem.st.executeUpdate(createUserSQL);
+                
+                // Grant privileges
+                String grantSQL = String.format(
+                    "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'%s';", 
+                    ESystem.currentDB, username, ESystem.usedHostAddress);
+                ESystem.st.executeUpdate(grantSQL);
+                ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
+                
+                System.out.println("User created successfully");
+                
+            } catch (SQLException ex) {
+                System.err.println("Error creating database user: " + ex.getMessage());
+            }
+            showRecords();
+        } catch (Exception ex) {
+            System.err.println("Error: " + ex.getMessage());
+        }
+    }//GEN-LAST:event_saveActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         Teacher teacher = new Teacher();
@@ -284,12 +309,42 @@ public class TeacherForm extends javax.swing.JFrame {
         showClassList();
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        Teacher teacher = new Teacher();
-        teacher.DeleteRecord(Integer.valueOf(Tid.getText()));
-        showRecords();
-        showClassList();
-    }//GEN-LAST:event_jButton3ActionPerformed
+    private void deleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteActionPerformed
+         if (Tid.getText().trim().isEmpty()) {
+            System.err.println("Error: Student ID is empty");
+            return;
+        }
+        
+        try {
+            int studentId = Integer.parseInt(Tid.getText());
+            String getUsernameSQL = String.format(
+                "SELECT CONCAT(Tid, Tname) AS username FROM teachers WHERE Tid = %d", 
+                studentId);
+            String username = null;
+            try (ResultSet rs = ESystem.st.executeQuery(getUsernameSQL)) {
+                if (rs.next()) username = rs.getString("username");
+            } catch (Exception e) {}
+            
+            Teacher teacher = new Teacher();
+            teacher.DeleteRecord(studentId);
+            
+            if (username != null) {
+                try {
+                    String dropUserSQL = String.format("DROP USER '%s'@'%s';", username, ESystem.usedHostAddress);
+                    ESystem.st.executeUpdate(dropUserSQL);
+                    ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
+                } catch (SQLException ex) { 
+                    System.err.println("Error deleting database user: " + ex.getMessage()); 
+                }
+            }
+            showRecords();
+            showClassList();
+        } catch (NumberFormatException ex) {
+            System.err.println("Error: Invalid student ID format");
+        } catch (Exception ex) { 
+            System.err.println("Error: " + ex.getMessage()); 
+        }
+    }//GEN-LAST:event_deleteActionPerformed
 
     private void TnameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TnameActionPerformed
         // TODO add your handling code here:
@@ -511,9 +566,8 @@ public class TeacherForm extends javax.swing.JFrame {
     private javax.swing.JTextField Tdept;
     private javax.swing.JTextField Tid;
     private javax.swing.JTextField Tname;
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton delete;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
@@ -527,5 +581,6 @@ public class TeacherForm extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
+    private javax.swing.JButton save;
     // End of variables declaration//GEN-END:variables
 }
