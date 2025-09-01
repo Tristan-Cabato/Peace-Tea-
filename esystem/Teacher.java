@@ -13,8 +13,7 @@ public class Teacher extends ESystem {
     int Tid;
     String Tname, Tadd, Tcontact, Tdept;
 
-    public Teacher() { 
-        connectDB();
+    public Teacher() {
         try {
             String query = "SELECT MAX(ID) + 1 FROM teachers";
             ResultSet rs = st.executeQuery(query);
@@ -27,7 +26,6 @@ public class Teacher extends ESystem {
             Tid = 3001; 
         } 
     }
-    public void connectDB(){ DBConnect(); }
 
     public void SaveRecord(int Tid, String Tname, String Tadd, int Tcontact, String Tdept){
         String query = "Insert into teachers values(" + Tid + ",'" + Tname + "','" + Tadd + "'," + Tcontact + ",'" + Tdept + "')";

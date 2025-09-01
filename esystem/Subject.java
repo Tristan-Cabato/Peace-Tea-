@@ -15,7 +15,6 @@ public class Subject extends ESystem {
     String Subjcode, Subjdesc, sched;
     
     public Subject() { 
-        connectDB();
         try {
             String query = "SELECT MAX(ID) + 1 FROM subjects";
             ResultSet rs = st.executeQuery(query);
@@ -28,7 +27,6 @@ public class Subject extends ESystem {
             Subjid = 2001; 
         } 
     }
-    public void connectDB() { DBConnect(); }
     
     public void SaveRecord(int Subjid, String Subjcode, String Subjdesc, int Subjunits, String sched){
         String query = "Insert into subjects values(" + Subjid + ",'" + Subjcode + "','" + Subjdesc + "'," + Subjunits + ",'" + sched + "')";

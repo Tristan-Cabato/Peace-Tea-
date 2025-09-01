@@ -22,6 +22,7 @@ public class StudentsForm extends javax.swing.JFrame {
      * Creates new form StudentsForm
      */
     public StudentsForm() {
+        setTitle("Students Form");
         initComponents();
         // Clear any default rows from the table
         DefaultTableModel model1 = (DefaultTableModel)jTable1.getModel();
@@ -52,7 +53,7 @@ public class StudentsForm extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
+        save = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
@@ -116,10 +117,10 @@ public class StudentsForm extends javax.swing.JFrame {
 
         jLabel6.setText("Student Contact");
 
-        jButton1.setText("Save");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        save.setText("Save");
+        save.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                saveActionPerformed(evt);
             }
         });
 
@@ -307,7 +308,7 @@ public class StudentsForm extends javax.swing.JFrame {
                                 .addGap(6, 6, 6)
                                 .addComponent(jButton5))))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jButton1)
+                        .addComponent(save)
                         .addGap(12, 12, 12)
                         .addComponent(jButton4)
                         .addGap(11, 11, 11)))
@@ -358,7 +359,7 @@ public class StudentsForm extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jButton1)
+                                .addComponent(save)
                                 .addComponent(jButton4))
                             .addComponent(jLabel8))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -386,12 +387,40 @@ public class StudentsForm extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_NameActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-        Students student = new Students();
-        student.SaveRecord(student.Studid, Name.getText(), Address.getText(), Integer.parseInt(Contact.getText()), Gender.getText(), Integer.parseInt(YearLevel.getText()));
-        showRecords();
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void saveActionPerformed(java.awt.event.ActionEvent evt) {
+        try {
+            Students student = new Students();
+            student.SaveRecord(student.Studid, Name.getText(), Address.getText(), 
+                Integer.parseInt(Contact.getText()), Gender.getText(), 
+                Integer.parseInt(YearLevel.getText()));
+            
+            String username = String.valueOf(student.Studid) + Name.getText();
+            String password = "AdDU" + Name.getText();
+            String currentDB = ESystem.currentDB;
+            
+            try {
+                String createUserSQL = String.format(
+                    "CREATE USER '%s'@'10.4.44.47' IDENTIFIED BY '%s'", 
+                    username, password);
+                ESystem.st.executeUpdate(createUserSQL);
+                
+                // Grant privileges
+                String grantSQL = String.format(
+                    "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'10.4.44.47'", 
+                    currentDB, username);
+                ESystem.st.executeUpdate(grantSQL);
+                ESystem.st.executeUpdate("FLUSH PRIVILEGES");
+                
+                System.out.println("User created successfully");
+                
+            } catch (SQLException ex) {
+                System.err.println("Error creating database user: " + ex.getMessage());
+            }
+            showRecords();
+        } catch (Exception ex) {
+            System.err.println("Error: " + ex.getMessage());
+        }
+    }//GEN-LAST:event_saveActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
@@ -400,12 +429,41 @@ public class StudentsForm extends javax.swing.JFrame {
         showRecords();
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
-        Students student = new Students();
-        student.DeleteRecord(Integer.parseInt(Studid.getText()));
-        showRecords();
-    }//GEN-LAST:event_jButton3ActionPerformed
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {
+        if (Studid.getText().trim().isEmpty()) {
+            System.err.println("Error: Student ID is empty");
+            return;
+        }
+        
+        try {
+            int studentId = Integer.parseInt(Studid.getText());
+            String getUsernameSQL = String.format(
+                "SELECT CONCAT(Studid, Name) AS username FROM students WHERE Studid = %d", 
+                studentId);
+            String username = null;
+            try (ResultSet rs = ESystem.st.executeQuery(getUsernameSQL)) {
+                if (rs.next()) username = rs.getString("username");
+            } catch (Exception e) {}
+            
+            Students student = new Students();
+            student.DeleteRecord(studentId);
+            
+            if (username != null) {
+                try {
+                    String dropUserSQL = String.format("DROP USER IF EXISTS '%s'@'%%'", username);
+                    ESystem.st.executeUpdate(dropUserSQL);
+                    ESystem.st.executeUpdate("FLUSH PRIVILEGES");
+                } catch (SQLException ex) { 
+                    System.err.println("Error deleting database user: " + ex.getMessage()); 
+                }
+            }
+            showRecords();
+        } catch (NumberFormatException ex) {
+            System.err.println("Error: Invalid student ID format");
+        } catch (Exception ex) { 
+            System.err.println("Error: " + ex.getMessage()); 
+        }
+    }                                        
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
         SubjectForm sform = new SubjectForm();
@@ -1036,7 +1094,6 @@ public class StudentsForm extends javax.swing.JFrame {
     private javax.swing.JTextField Studid;
     private javax.swing.JTextField YearLevel;
     private javax.swing.Box.Filler filler1;
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
@@ -1065,5 +1122,6 @@ public class StudentsForm extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
+    private javax.swing.JButton save;
     // End of variables declaration//GEN-END:variables
 }

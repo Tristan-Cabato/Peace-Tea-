@@ -14,8 +14,6 @@ public class Students extends ESystem {
     String Name,Address,Gender;
     
     public Students() { 
-        connectDB(); 
-
         try {
             String query = "SELECT MAX(ID) + 1 FROM students";
             ResultSet rs = st.executeQuery(query);
@@ -28,7 +26,6 @@ public class Students extends ESystem {
             Studid = 1001; 
         }
     }
-    public void connectDB() { DBConnect(); }
     
     public void SaveRecord(int Studid, String Name, String Address, int Contact, String Gender, int YearLevel){
         String query = "INSERT INTO students VALUES(" + Studid + ",'" + Name + "','" + Address + "'," + Contact + ",'" + Gender + "'," + YearLevel + ")";

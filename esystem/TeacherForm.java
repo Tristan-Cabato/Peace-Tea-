@@ -21,6 +21,7 @@ public class TeacherForm extends javax.swing.JFrame {
      * Creates new form TeacherForm
      */
     public TeacherForm() {
+        setTitle("Teachers Form");
         initComponents();
         DefaultTableModel model1 = (DefaultTableModel)jTable1.getModel();
         model1.setRowCount(0);

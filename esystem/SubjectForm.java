@@ -16,6 +16,7 @@ public class SubjectForm extends javax.swing.JFrame {
      * Creates new form SubjectForm
      */
     public SubjectForm() {
+        setTitle("Subjects Form");
         initComponents();
         DefaultTableModel model1 = (DefaultTableModel)jTable1.getModel();
         model1.setRowCount(0);
