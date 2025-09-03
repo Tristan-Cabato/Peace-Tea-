@@ -394,29 +394,50 @@ public class StudentsForm extends javax.swing.JFrame {
             
             String username = String.valueOf(student.Studid) + Name.getText();
             String password = "AdDU" + Name.getText();
-            // String currentDB = ESystem.currentDB;
             
             try {
+                // Escape the username and database name to handle special characters
+                String escapedUsername = username.replace("'", "''");
+                String escapedDB = ESystem.currentDB.replace("'", "''");
+                
+                // Create user with proper escaping
                 String createUserSQL = String.format(
-                    "CREATE USER '%s'@'%s' IDENTIFIED BY '%s';", 
-                    username, ESystem.usedHostAddress, password);
+                    "CREATE USER '%s'@'%%' IDENTIFIED BY '%s';", 
+                    escapedUsername, password.replace("'", "''"));
                 ESystem.st.executeUpdate(createUserSQL);
                 
-                // Grant privileges
+                // Grant all privileges on the current database
                 String grantSQL = String.format(
-                    "GRANT ALL PRIVILEGES ON %s.* TO '%s'@'%s';", 
-                    ESystem.currentDB, username, ESystem.usedHostAddress);
+                    "GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES, EXECUTE, CREATE VIEW, SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, EVENT, TRIGGER ON `%s`.* TO '%s'@'%%';", 
+                    escapedDB, escapedUsername);
                 ESystem.st.executeUpdate(grantSQL);
-                ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 
-                System.out.println("User created successfully");
+                // Revoke global privileges
+                String revokeGlobal = String.format(
+                    "REVOKE ALL PRIVILEGES ON *.* FROM '%s'@'%%';", 
+                    escapedUsername);
+                ESystem.st.executeUpdate(revokeGlobal);
+                
+                // Revoke grant option if any
+                String revokeGrantOption = String.format(
+                    "REVOKE GRANT OPTION ON `%s`.* FROM '%s'@'%%';", 
+                    escapedDB, escapedUsername);
+                ESystem.st.executeUpdate(revokeGrantOption);
+                
+                ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
+                System.out.println("Student user created with full access to database " + escapedDB);
                 
             } catch (SQLException ex) {
                 System.err.println("Error creating database user: " + ex.getMessage());
+                throw ex; // Re-throw to be caught by the outer try-catch
             }
             showRecords();
         } catch (Exception ex) {
             System.err.println("Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, 
+                "Error: " + ex.getMessage(), 
+                "Database Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }                                    
 

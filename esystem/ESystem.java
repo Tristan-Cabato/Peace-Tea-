@@ -13,8 +13,8 @@ public class ESystem {
 
     public static String currentDB;
     public static String currentUser;
-    public static String hostAddress = "192.168.1.193";
-    public static String usedHostAddress = "LAPTOP-7AGILLAO";
+    public static String hostAddress = "10.4.44.47";
+    public static String usedHostAddress = "10.4.44.153";
         // Check the terminal upon running
     public static int hostPort = 3306;
     
@@ -23,36 +23,21 @@ public class ESystem {
         loginForm.setVisible(true);
     }
     
-    public static boolean DBConnect(String db, String username, String password) {
+     // In ESystem.java, modify the connection logic
+    public static boolean DBConnect(String dbName, String username, String password) {
         try {
-            if (con != null && !con.isClosed()) {
-                try { con.close(); } catch (SQLException e) {}
-            } Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = String.format(
-                "jdbc:mysql://%s:%d/%s?zeroDateTimeBehavior=CONVERT_TO_NULL&useSSL=false&allowPublicKeyRetrieval=true",
-                hostAddress, hostPort, db
-            );
-            java.util.Properties props = new java.util.Properties();
-            props.setProperty("user", username);
-            props.setProperty("password", password);
-            props.setProperty("useSSL", "false");
+            // Close previous connection if exists
+            if (con != null) con.close();
             
-            con = DriverManager.getConnection(url, props);
-                try {
-                    System.out.println("Connected as: " + ESystem.con.getMetaData().getUserName());
-                } catch (SQLException e) {
-                    System.err.println("Unexpected error: " + e.getMessage());
-                }
+            // Create new connection with the provided credentials
+            String url = "jdbc:mysql://" + hostAddress + ":" + hostPort + "/" + dbName;
+            con = DriverManager.getConnection(url, username, password);
             st = con.createStatement();
-            st.execute("SELECT 1");
-            
-            currentDB = db;
+            currentDB = dbName;
             currentUser = username;
-            
-            System.out.println("Successfully connected to database: " + db);
             return true;
-        } catch (Exception ex) {
-            System.err.println("Unexpected error: " + ex.getMessage());
+        } catch (Exception e) {
+            System.err.println("Database connection error: " + e.getMessage());
             return false;
         }
     }

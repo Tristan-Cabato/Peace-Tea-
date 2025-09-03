@@ -213,7 +213,7 @@ public class Login extends javax.swing.JFrame {
                 boolean isStudent = false;
                 boolean isTeacher = false;
                 try (PreparedStatement ps = ESystem.con.prepareStatement(
-                        "SELECT Studid FROM students WHERE CONCAT(Studid, Name) = ? LIMIT 1")) {
+                        "SELECT ID FROM students WHERE CONCAT(ID, Name) = ? LIMIT 1")) {
                     ps.setString(1, ESystem.currentUser);
                     try (ResultSet rs = ps.executeQuery()) {
                         isStudent = rs.next();
@@ -223,15 +223,25 @@ public class Login extends javax.swing.JFrame {
                     System.err.println("Role check error: " + e.getMessage());
                 }
 
+                // After the student check, add this:
+                if (!isStudent) {
+                    try (PreparedStatement ps = ESystem.con.prepareStatement(
+                            "SELECT ID FROM teachers WHERE CONCAT(ID, Name) = ? LIMIT 1")) {
+                        ps.setString(1, ESystem.currentUser);
+                        try (ResultSet rs = ps.executeQuery()) {
+                            isTeacher = rs.next();
+                        }
+                    } catch (SQLException e) {
+                        System.err.println("Teacher check error: " + e.getMessage());
+                    }
+                }
+
                 if (isStudent) {
-                    StudentRegistration registrationForm = new StudentRegistration();
-                    registrationForm.setVisible(true);
+                    new StudentRegistration().setVisible(true);
                 } else if (isTeacher) {
-                    GradeForm gradeForm = new GradeForm();
-                    gradeForm.setVisible(true);
+                    new GradeForm().setVisible(true);
                 } else {
-                    StudentsForm studentsForm = new StudentsForm();
-                    studentsForm.setVisible(true);
+                    new StudentsForm().setVisible(true);
                 }
                 this.dispose();
             } else {
