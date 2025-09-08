@@ -276,6 +276,27 @@ public class TeacherForm extends javax.swing.JFrame {
             
             String username = String.valueOf(teacher.Tid) + Tname.getText();
             String password = "AdDU" + Tname.getText();
+
+            try {
+                // First check if user exists
+                String escapedUsername = username.replace("'", "''");
+                ResultSet rs = ESystem.st.executeQuery(
+                    "SELECT User FROM mysql.user WHERE User = '" + escapedUsername + "' AND Host = '%'");
+                
+                if (rs.next()) {
+                    // User exists, drop it
+                    try {
+                        ESystem.st.executeUpdate("DROP USER '" + escapedUsername + "'@'%'");
+                        System.out.println("Dropped existing database user: " + username);
+                    } catch (SQLException e) {
+                        System.err.println("Warning: Could not drop existing database user: " + e.getMessage());
+                        // Continue anyway, we'll try to create the user
+                    }
+                }
+            } catch (SQLException e) {
+                System.err.println("Warning: Error checking for existing user: " + e.getMessage());
+                // Continue anyway, we'll try to create the user
+            }
             
             try {
                 // Escape the username and database name to handle special characters
@@ -288,23 +309,17 @@ public class TeacherForm extends javax.swing.JFrame {
                     escapedUsername, password.replace("'", "''"));
                 ESystem.st.executeUpdate(createUserSQL);
                 
-                // Grant all privileges on the current database
-                String grantSQL = String.format(
-                    "GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%%';", 
-                    ESystem.currentDB.replace("'", "''"), escapedUsername);
-                ESystem.st.executeUpdate(grantSQL);
-                
                 // Revoke global privileges
                 String revokeGlobal = String.format(
                     "REVOKE ALL PRIVILEGES ON *.* FROM '%s'@'%%';", 
                     escapedUsername);
                 ESystem.st.executeUpdate(revokeGlobal);
-                
-                // Revoke grant option if any
-                String revokeGrantOption = String.format(
-                    "REVOKE GRANT OPTION ON `%s`.* FROM '%s'@'%%';", 
+                    
+                // Grant all privileges on the current database
+                String grantSQL = String.format(
+                    "GRANT SELECT, INSERT, UPDATE ON `%s`.* TO '%s'@'%%';", 
                     ESystem.currentDB.replace("'", "''"), escapedUsername);
-                ESystem.st.executeUpdate(revokeGrantOption);
+                ESystem.st.executeUpdate(grantSQL);
                 
                 ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 System.out.println("Teacher user created with full access to database " + ESystem.currentDB);
@@ -351,7 +366,7 @@ public class TeacherForm extends javax.swing.JFrame {
             
             if (username != null) {
                 try {
-                    String dropUserSQL = String.format("DROP USER '%s'@'%s';", username, ESystem.usedHostAddress);
+                    String dropUserSQL = String.format("REVOKE ALL PRIVILEGES, GRANT OPTION ON *.* FROM '%s'@'%s';", username, ESystem.usedHostAddress);
                     ESystem.st.executeUpdate(dropUserSQL);
                     ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 } catch (SQLException ex) { 
