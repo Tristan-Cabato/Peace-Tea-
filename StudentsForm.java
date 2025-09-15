@@ -462,6 +462,7 @@ public class StudentsForm extends javax.swing.JFrame {
         
         try {
             int studentId = Integer.parseInt(Studid.getText());
+            
             String getUsernameSQL = String.format(
                 "SELECT CONCAT(Studid, Name) AS username FROM students WHERE Studid = %d", 
                 studentId);
@@ -474,19 +475,55 @@ public class StudentsForm extends javax.swing.JFrame {
             student.DeleteRecord(studentId);
             
             if (username != null) {
-                try {
-                    String dropUserSQL = String.format("REVOKE ALL PRIVILEGES, GRANT OPTION ON %s.* FROM '%s'@'%s';", ESystem.currentDB, username, ESystem.usedHostAddress);
-                    ESystem.st.executeUpdate(dropUserSQL);
-                    ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
-                    
-                    // Refresh the database list in the login form
-                    Login loginForm = Login.getCurrentInstance();
-                    if (loginForm != null) {
-                        loginForm.refreshDatabaseList();
+                // Safeguard: never touch the MySQL root account
+                if ("root".equalsIgnoreCase(username)) {
+                    System.err.println("Skip revoking privileges for reserved account: root");
+                } else {
+                    try {
+                        String escapedUser = username.replace("'", "''");
+                        String escapedDbBacktick = ESystem.currentDB.replace("`", "``");
+
+                        // Collect all potential hosts for this user from mysql.user and mysql.db
+                        java.util.Set<String> hosts = new java.util.LinkedHashSet<>();
+                        try (ResultSet uh = ESystem.st.executeQuery(
+                                "SELECT DISTINCT Host FROM mysql.user WHERE User = '" + escapedUser + "'")) {
+                            while (uh.next()) {
+                                String h = uh.getString(1);
+                                if (h != null && !h.isEmpty()) hosts.add(h);
+                            }
+                        } catch (SQLException ignore) {}
+                        try (ResultSet dh = ESystem.st.executeQuery(
+                                "SELECT DISTINCT Host FROM mysql.db WHERE User = '" + escapedUser + "' AND Db = '" + ESystem.currentDB.replace("'", "''") + "'")) {
+                            while (dh.next()) {
+                                String h = dh.getString(1);
+                                if (h != null && !h.isEmpty()) hosts.add(h);
+                            }
+                        } catch (SQLException ignore) {}
+                        // Common fallbacks
+                        hosts.add("%");
+                        hosts.add(ESystem.usedHostAddress);
+                        hosts.add("localhost");
+
+                        // Revoke on current database for all collected hosts
+                        for (String host : hosts) {
+                            String escapedHost = host.replace("'", "''");
+                            String revokeSQL = String.format(
+                                "REVOKE ALL PRIVILEGES, GRANT OPTION ON `%s`.* FROM '%s'@'%s';",
+                                escapedDbBacktick, escapedUser, escapedHost);
+                            try { ESystem.st.executeUpdate(revokeSQL); } catch (SQLException ignored) {}
+                        }
+
+                        ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
+
+                        // Refresh the database list in the login form
+                        Login loginForm = Login.getCurrentInstance();
+                        if (loginForm != null) {
+                            loginForm.refreshDatabaseList();
+                        }
+
+                    } catch (SQLException ex) {
+                        System.err.println("Error revoking privileges for database user: " + ex.getMessage());
                     }
-                    
-                } catch (SQLException ex) { 
-                    System.err.println("Error deleting database user: " + ex.getMessage()); 
                 }
             }
             showRecords();

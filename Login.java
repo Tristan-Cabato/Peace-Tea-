@@ -164,21 +164,28 @@ public class Login extends javax.swing.JFrame {
                 this.loggedInPassword = password;
 
                 try (Statement stmt = testConn.createStatement();
-                    ResultSet rs = stmt.executeQuery("SHOW GRANTS")) {
-                    
+                     ResultSet rs = stmt.executeQuery("SHOW GRANTS")) {
+
                     databaseDropDown.removeAllItems();
                     Set<String> accessibleDbs = new HashSet<>();
-                    
+
                     // Parse the GRANT statements to find database access
                     while (rs.next()) {
-                        String grant = rs.getString(1).toLowerCase();
-                        // Check for global privileges
-                        if (grant.contains("on *.*")) {
-                            // User has access to all databases, so we'll show all non-system databases
+                        String grant = rs.getString(1);
+                        if (grant == null) continue;
+                        String grantLower = grant.toLowerCase(Locale.ROOT).trim();
+
+                        // Ignore default USAGE grant
+                        if (grantLower.startsWith("grant usage") && grantLower.contains(" on *.*")) {
+                            continue;
+                        }
+
+                        // True global privilege (not just USAGE): include all non-system DBs
+                        if (grantLower.contains(" on *.*") && !grantLower.startsWith("grant usage")) {
                             try (ResultSet allDbs = stmt.executeQuery("SHOW DATABASES")) {
                                 while (allDbs.next()) {
                                     String dbName = allDbs.getString(1);
-                                    if (!dbName.equalsIgnoreCase("information_schema") && 
+                                    if (!dbName.equalsIgnoreCase("information_schema") &&
                                         !dbName.equalsIgnoreCase("mysql") &&
                                         !dbName.equalsIgnoreCase("performance_schema") &&
                                         !dbName.equalsIgnoreCase("sys")) {
@@ -186,23 +193,45 @@ public class Login extends javax.swing.JFrame {
                                     }
                                 }
                             }
-                            break;
-                        } else if (grant.contains("on `") && grant.contains("`.*")) {
-                            // Extract database name from grant statement
-                            int start = grant.indexOf("`") + 1;
-                            int end = grant.indexOf("`", start);
-                            if (start > 0 && end > start) {
-                                String dbName = grant.substring(start, end);
-                                accessibleDbs.add(dbName);
+                            break; // no need to parse further
+                        }
+
+                        // Extract database name when present
+                        int onIdx = grantLower.indexOf(" on ");
+                        if (onIdx >= 0) {
+                            String tail = grant.substring(onIdx + 4); // original case
+                            int tick1 = tail.indexOf('`');
+                            if (tick1 >= 0) {
+                                int tick2 = tail.indexOf('`', tick1 + 1);
+                                if (tick2 > tick1) {
+                                    String dbName = tail.substring(tick1 + 1, tick2);
+                                    if (dbName != null && !dbName.isEmpty()) accessibleDbs.add(dbName);
+                                }
+                            } else {
+                                int starIdx = tail.indexOf(".*");
+                                if (starIdx > 0) {
+                                    String dbName = tail.substring(0, starIdx).trim();
+                                    if ((dbName.startsWith("'") && dbName.endsWith("'")) ||
+                                        (dbName.startsWith("\"") && dbName.endsWith("\""))) {
+                                        dbName = dbName.substring(1, dbName.length() - 1);
+                                    }
+                                    if (!dbName.isEmpty() && !dbName.contains(" ")) accessibleDbs.add(dbName);
+                                }
                             }
                         }
                     }
-                    
-                    // Add accessible databases to the dropdown
-                    for (String dbName : accessibleDbs) {
-                        databaseDropDown.addItem(dbName);
-                    }
-                    
+
+                    // Sort deterministically: 1stSem -> 2ndSem -> Summer; within same term, newest school year first
+                    java.util.List<String> dbList = new java.util.ArrayList<>(accessibleDbs);
+                    java.util.Collections.sort(dbList, (a, b) -> {
+                        int[] wa = extractSortKey(a);
+                        int[] wb = extractSortKey(b);
+                        if (wa[0] != wb[0]) return Integer.compare(wb[0], wa[0]);
+                        if (wa[1] != wb[1]) return Integer.compare(wa[1], wb[1]);
+                        return a.compareToIgnoreCase(b);
+                    });
+                    for (String dbName : dbList) databaseDropDown.addItem(dbName);
+
                     if (databaseDropDown.getItemCount() == 0) {
                         JOptionPane.showMessageDialog(null, "No accessible databases found for this user");
                     } else {
@@ -242,53 +271,77 @@ public class Login extends javax.swing.JFrame {
         }
     
         try {
+            // First try to connect to the database
             if (ESystem.DBConnect(selectedDb, this.loggedInUsername, this.loggedInPassword)) {
-                // Check user's privileges to determine role
-                boolean isStudent = false;
+                // Now verify we have actual access by checking the database-level privileges
+                boolean hasAccess = false;
                 boolean isTeacher = false;
-    
-                // First check for teacher privileges
-                try (Statement stmt = ESystem.con.createStatement();
-                     ResultSet rs = stmt.executeQuery("SHOW GRANTS FOR CURRENT_USER()")) {
-    
-                    while (rs.next()) {
-                        String grant = rs.getString(1).toLowerCase();
-                        // Check for teacher privileges (INSERT, UPDATE, etc.)
-                        if (grant.contains("on `" + selectedDb.toLowerCase() + "`.*") && 
-                            (grant.contains("insert") || grant.contains("update")) || grant.contains("select")) {
-                            isTeacher = true;
-                            break;
-                        } else if (grant.contains("on `" + selectedDb.toLowerCase() + "`.*") && 
-                            grant.contains("select")) {
-                            isStudent = true;
-                            break;
+                
+                try (Statement stmt = ESystem.con.createStatement()) {
+                    // For root user, grant full access and teacher privileges
+                    if ("root".equalsIgnoreCase(this.loggedInUsername)) {
+                        hasAccess = true;
+                        isTeacher = true;
+                    } else {
+                        // For non-root users, check their specific privileges
+                        String escDb = selectedDb.replace("'", "''");
+                        String escUser = this.loggedInUsername.replace("'", "''");
+                        String accessSql = "SELECT " +
+                                "COUNT(CASE WHEN privilege_type = 'SELECT' THEN 1 END) > 0 as has_select, " +
+                                "COUNT(CASE WHEN privilege_type = 'INSERT' THEN 1 END) > 0 as has_insert, " +
+                                "COUNT(CASE WHEN privilege_type = 'UPDATE' THEN 1 END) > 0 as has_update " +
+                                "FROM information_schema.schema_privileges " +
+                                "WHERE table_schema = '" + escDb + "' " +
+                                "AND REPLACE(grantee, '''', '') LIKE '" + escUser + "@%'";
+                        try (ResultSet rs = stmt.executeQuery(accessSql)) {
+                            
+                            if (rs.next()) {
+                                hasAccess = rs.getBoolean("has_select"); // Need at least SELECT access
+                                isTeacher = rs.getBoolean("has_select") && 
+                                          rs.getBoolean("has_insert") && 
+                                          rs.getBoolean("has_update"); // Need all three for teacher
+                            }
                         }
                     }
                 } catch (SQLException e) {
-                    System.err.println("Error checking privileges: " + e.getMessage());
-                    JOptionPane.showMessageDialog(null, "Error checking privileges", 
+                    System.err.println("Error checking database access: " + e.getMessage());
+                    JOptionPane.showMessageDialog(null, "Error checking database access: " + e.getMessage(), 
                         "Database Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                if (isStudent) {
-                    new StudentRegistration().setVisible(true);
-                } else if (isTeacher) {
-                    new GradeForm().setVisible(true);
+                if (!hasAccess) {
+                    JOptionPane.showMessageDialog(null, 
+                        "You don't have access to this database: " + selectedDb,
+                        "Access Denied", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Route based on role
+                if ("root".equalsIgnoreCase(this.loggedInUsername)) {
+                    // Admin/root: go to the main StudentsForm (has DB and CRUD menus)
+                    StudentsForm adminHub = new StudentsForm();
+                    adminHub.setVisible(true);
+                    this.dispose();
+                    return;
+                }
+                
+                if (isTeacher) {
+                    // Teacher users: go to TeacherForm
+                    TeacherForm teacherForm = new TeacherForm();
+                    teacherForm.setVisible(true);
                 } else {
-                    new StudentsForm().setVisible(true);
-                } this.dispose();
+                    // Student or other user with only SELECT access
+                    StudentRegistration studentForm = new StudentRegistration();
+                    studentForm.setVisible(true);
+                }
+                
+                this.dispose();
             } else {
                 JOptionPane.showMessageDialog(null, 
                     "Failed to connect to database: " + selectedDb);
                 System.out.println("Failed to connect to database: " + selectedDb);
             }
-            TeacherForm teacherForm = new TeacherForm();
-                teacherForm.setConnectedDatabase(selectedDb);
-            SubjectForm subjectForm = new SubjectForm();
-                subjectForm.setConnectedDatabase(selectedDb);
-            StudentsForm studentsForm = new StudentsForm();
-                studentsForm.setConnectedDatabase(selectedDb);
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
             if (errorMsg.contains("Access denied")) {
@@ -297,7 +350,7 @@ public class Login extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Database error: " + errorMsg);
             System.out.println("Database error: " + errorMsg);
         }
-    }//GEN-LAST:event_submitButtonActionPerformed
+    }
 
     private void databaseDropDownActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_databaseDropDownActionPerformed
         // TODO add your handling code here:
@@ -308,44 +361,35 @@ public class Login extends javax.swing.JFrame {
     }
     
     public void refreshDatabaseList() {
-        databaseDropDown.removeAllItems();
-        try (Statement stmt = ESystem.con.createStatement();
-             ResultSet rs = stmt.executeQuery("SHOW GRANTS FOR CURRENT_USER()")) {
-            
-            Set<String> accessibleDbs = new HashSet<>();
-            
-            while (rs.next()) {
-                String grant = rs.getString(1).toLowerCase();
-                if (grant.contains("on *.*")) {
-                    // User has global privileges, show all non-system databases
-                    try (ResultSet allDbs = stmt.executeQuery("SHOW DATABASES")) {
-                        while (allDbs.next()) {
-                            String dbName = allDbs.getString(1);
-                            if (!dbName.equalsIgnoreCase("information_schema") && 
-                                !dbName.equalsIgnoreCase("mysql") && 
-                                !dbName.equalsIgnoreCase("performance_schema") && 
-                                !dbName.equalsIgnoreCase("sys")) {
-                                databaseDropDown.addItem(dbName);
-                            }
-                        }
-                    }
-                    break;
-                } else if (grant.contains("on `") && grant.contains("`.*")) {
-                    // Extract database name from grant statement
-                    int start = grant.indexOf("`") + 1;
-                    int end = grant.indexOf("`", start);
-                    if (start > 0 && end > start) {
-                        String dbName = grant.substring(start, end);
-                        if (!accessibleDbs.contains(dbName)) {
-                            accessibleDbs.add(dbName);
-                            databaseDropDown.addItem(dbName);
-                        }
-                    }
+        loginButtonActionPerformed(null);
+    }
+    
+    // Helper to extract sorting keys: [year, termOrder]
+    // termOrder: 1stSem -> 0, 2ndSem -> 1, Summer -> 2, others -> 3
+    private static int[] extractSortKey(String dbName) {
+        int year = -1; // unknown year sorts last
+        int termOrder = 3; // unknown term sorts after Summer
+        try {
+            String lower = dbName.toLowerCase();
+            if (lower.startsWith("1stsem")) termOrder = 0;
+            else if (lower.startsWith("2ndsem")) termOrder = 1;
+            else if (lower.startsWith("summer")) termOrder = 2;
+
+            // Try to parse year after "_sy"
+            int syIdx = lower.indexOf("_sy");
+            if (syIdx >= 0 && syIdx + 3 < dbName.length()) {
+                int i = syIdx + 3;
+                StringBuilder num = new StringBuilder();
+                while (i < dbName.length() && Character.isDigit(dbName.charAt(i))) {
+                    num.append(dbName.charAt(i));
+                    i++;
+                }
+                if (num.length() >= 4) {
+                    year = Integer.parseInt(num.substring(0, 4));
                 }
             }
-        } catch (SQLException e) {
-            System.err.println("Error refreshing database list: " + e.getMessage());
-        }
+        } catch (Exception ignored) {}
+        return new int[] { year, termOrder };
     }
 
     /**

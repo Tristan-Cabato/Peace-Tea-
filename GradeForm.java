@@ -10,6 +10,13 @@ package com.mycompany.esystem;
  */
 public class GradeForm extends javax.swing.JFrame {
 
+    private String connectedDatabase;
+
+    public void setConnectedDatabase(String dbName) {
+        this.connectedDatabase = dbName;
+        setTitle("Grades Form - " + dbName);
+    }
+
     /**
      * Creates new form GradeForm
      */

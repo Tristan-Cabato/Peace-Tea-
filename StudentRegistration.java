@@ -10,6 +10,13 @@ package com.mycompany.esystem;
  */
 public class StudentRegistration extends javax.swing.JFrame {
 
+    private String connectedDatabase;
+
+    public void setConnectedDatabase(String dbName) {
+        this.connectedDatabase = dbName;
+        setTitle("Student - " + dbName);
+    }
+
     /**
      * Creates new form StudentRegistration
      */
