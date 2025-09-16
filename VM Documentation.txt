@@ -1,5 +1,0 @@
-Exer4
-
-------
-
-Now I don't really know why when granting privileges on my wifi ubuntu server does it instantly grant it access. But the code is practically complete. Spend around 11 minutes of figuring it out, if all else fails, start the server from scratch, ironically that's the most productive way.
