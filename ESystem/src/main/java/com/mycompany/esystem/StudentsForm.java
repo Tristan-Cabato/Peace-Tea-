@@ -57,7 +57,7 @@ public class StudentsForm extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         jLabel7 = new javax.swing.JLabel();
-        jButton4 = new javax.swing.JButton();
+        AssignButton = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2 = new javax.swing.JTable();
@@ -163,10 +163,10 @@ public class StudentsForm extends javax.swing.JFrame {
         jLabel7.setAlignmentX(10.0F);
         jLabel7.setAlignmentY(5.0F);
 
-        jButton4.setText("Assign Subject");
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
+        AssignButton.setText("Assign Subject");
+        AssignButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
+                AssignButtonActionPerformed(evt);
             }
         });
 
@@ -310,7 +310,7 @@ public class StudentsForm extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(save)
                         .addGap(12, 12, 12)
-                        .addComponent(jButton4)
+                        .addComponent(AssignButton)
                         .addGap(11, 11, 11))
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
@@ -363,7 +363,7 @@ public class StudentsForm extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                 .addComponent(save)
-                                .addComponent(jButton4))
+                                .addComponent(AssignButton))
                             .addComponent(jLabel8))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -503,7 +503,7 @@ public class StudentsForm extends javax.swing.JFrame {
                     ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 }
                 userCheck.close();
-            } catch (SQLException _) {}
+            } catch (SQLException e) {}
         }
         showRecords();
     } catch (NumberFormatException ex) {
@@ -579,7 +579,7 @@ public class StudentsForm extends javax.swing.JFrame {
         jButton5.setEnabled(jTable2.getSelectedRow() >= 0);
     }//GEN-LAST:event_jTable2MouseClicked
 
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+    private void AssignButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AssignButtonActionPerformed
         if (Studid.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a student first");
             return;
@@ -629,7 +629,7 @@ public class StudentsForm extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         }
-    }//GEN-LAST:event_jButton4ActionPerformed
+    }//GEN-LAST:event_AssignButtonActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
         if (Studid.getText().isEmpty()) {
@@ -1151,6 +1151,7 @@ public class StudentsForm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField Address;
+    private javax.swing.JButton AssignButton;
     private javax.swing.JLabel ConnectedTo;
     private javax.swing.JTextField Contact;
     private javax.swing.JTextField Gender;
@@ -1160,7 +1161,6 @@ public class StudentsForm extends javax.swing.JFrame {
     private javax.swing.JButton delete;
     private javax.swing.Box.Filler filler1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

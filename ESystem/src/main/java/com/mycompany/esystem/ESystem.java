@@ -13,7 +13,7 @@ public class ESystem {
 
     public static String currentDB;
     public static String currentUser;
-    public static String hostAddress = "10.4.17.28";
+    public static String hostAddress = "10.4.44.47";
     public static String usedHostAddress = "10.4.44.153";
         // Check the terminal upon running
     public static int hostPort = 3306;
