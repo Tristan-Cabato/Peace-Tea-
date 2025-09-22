@@ -55,8 +55,8 @@ public class TeacherForm extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2 = new javax.swing.JTable();
-        jButton4 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
+        DropButton = new javax.swing.JButton();
+        AssignButton = new javax.swing.JButton();
         jLabel8 = new javax.swing.JLabel();
         ConnectedTo = new javax.swing.JLabel();
 
@@ -147,17 +147,17 @@ public class TeacherForm extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(jTable2);
 
-        jButton4.setText("Drop Subject");
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
+        DropButton.setText("Drop Subject");
+        DropButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
+                DropButtonActionPerformed(evt);
             }
         });
 
-        jButton5.setText("Assign Subject");
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
+        AssignButton.setText("Assign Subject");
+        AssignButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton5ActionPerformed(evt);
+                AssignButtonActionPerformed(evt);
             }
         });
 
@@ -204,9 +204,9 @@ public class TeacherForm extends javax.swing.JFrame {
                         .addGap(15, 15, 15)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jButton5)
+                                .addComponent(AssignButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jButton4))
+                                .addComponent(DropButton))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(save)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -265,8 +265,8 @@ public class TeacherForm extends javax.swing.JFrame {
                             .addComponent(delete))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton5)
-                            .addComponent(jButton4))
+                            .addComponent(AssignButton)
+                            .addComponent(DropButton))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(ConnectedTo)
                         .addContainerGap())))
@@ -382,7 +382,7 @@ public class TeacherForm extends javax.swing.JFrame {
                     ESystem.st.executeUpdate("FLUSH PRIVILEGES;");
                 }
                 userCheck.close();
-            } catch (SQLException _) {}
+            } catch (SQLException e) {}
         }
         showRecords();
         showClassList();
@@ -392,7 +392,7 @@ public class TeacherForm extends javax.swing.JFrame {
     } catch (Exception ex) { 
         System.err.println("Error: " + ex.getMessage()); 
     }
-}//GEN-LAST:event_deleteActionPerformed
+}                                      
 
     private void TnameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TnameActionPerformed
         // TODO add your handling code here:
@@ -430,7 +430,50 @@ public class TeacherForm extends javax.swing.JFrame {
     private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
     }//GEN-LAST:event_jTable2MouseClicked
 
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+    private void DropButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DropButtonActionPerformed
+        if (Tid.getText().isEmpty() || jTable2.getSelectedRow() < 0) {
+            JOptionPane.showMessageDialog(this, 
+                "Please select a teacher and a subject to unassign", 
+                "Selection Required", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        try {
+            int selectedRow = jTable2.getSelectedRow();
+            int subjectId = Integer.valueOf(jTable2.getValueAt(selectedRow, 0).toString());
+            int teacherId = Integer.valueOf(Tid.getText());
+            
+            int confirm = JOptionPane.showConfirmDialog(
+                this, 
+                "Are you sure you want to unassign this subject?",
+                "Confirm Unassign",
+                JOptionPane.YES_NO_OPTION
+            );
+        
+            if (confirm == JOptionPane.YES_OPTION) {
+                Assign assign = new Assign();
+                assign.setSubjid(subjectId);
+                String result = assign.deleteSubject(teacherId);
+                JOptionPane.showMessageDialog(this, result);
+                showClassList();
+            }
+            
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Invalid ID format: " + ex.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Error unassigning subject: " + ex.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }//GEN-LAST:event_DropButtonActionPerformed
+
+    private void AssignButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AssignButtonActionPerformed
         // Handle Assign Subject button
         if (Tid.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a teacher first");
@@ -488,50 +531,7 @@ public class TeacherForm extends javax.swing.JFrame {
             System.err.println("Error assigning subject: " + ex.getMessage());
             JOptionPane.showMessageDialog(this, "Error assigning subject: " + ex.getMessage());
         }
-    }//GEN-LAST:event_jButton4ActionPerformed
-
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        if (Tid.getText().isEmpty() || jTable2.getSelectedRow() < 0) {
-            JOptionPane.showMessageDialog(this, 
-                "Please select a teacher and a subject to unassign", 
-                "Selection Required", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        try {
-            int selectedRow = jTable2.getSelectedRow();
-            int subjectId = Integer.valueOf(jTable2.getValueAt(selectedRow, 0).toString());
-            int teacherId = Integer.valueOf(Tid.getText());
-            
-            int confirm = JOptionPane.showConfirmDialog(
-                this, 
-                "Are you sure you want to unassign this subject?",
-                "Confirm Unassign",
-                JOptionPane.YES_NO_OPTION
-            );
-        
-            if (confirm == JOptionPane.YES_OPTION) {
-                Assign assign = new Assign();
-                assign.setSubjid(subjectId);
-                String result = assign.deleteSubject(teacherId);
-                JOptionPane.showMessageDialog(this, result);
-                showClassList();
-            }
-            
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Invalid ID format: " + ex.getMessage(), 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error unassigning subject: " + ex.getMessage(), 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
-        }
-    }//GEN-LAST:event_jButton5ActionPerformed
+    }//GEN-LAST:event_AssignButtonActionPerformed
 
     private void showClassList() {
         DefaultTableModel model = (DefaultTableModel) jTable2.getModel();
@@ -625,7 +625,9 @@ public class TeacherForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton AssignButton;
     private javax.swing.JLabel ConnectedTo;
+    private javax.swing.JButton DropButton;
     private javax.swing.JTextField Tadd;
     private javax.swing.JTextField Tcontact;
     private javax.swing.JTextField Tdept;
@@ -633,8 +635,6 @@ public class TeacherForm extends javax.swing.JFrame {
     private javax.swing.JTextField Tname;
     private javax.swing.JButton delete;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

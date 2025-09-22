@@ -20,29 +20,39 @@ public class Enrolled extends ESystem {
         }
         
         // Check if student exists
-        String checkStudent = "SELECT COUNT(*) FROM students WHERE studid = " + studid;
+        String checkStudent = "SELECT COUNT(*) FROM students WHERE ID = ?";
         // Check if subject exists
-        String checkSubject = "SELECT COUNT(*) FROM subjects WHERE subjid = " + subjid;
+        String checkSubject = "SELECT COUNT(*) FROM subjects WHERE ID = ?";
         // Check if already enrolled
-        String checkEnrollment = "SELECT COUNT(*) FROM Enroll WHERE studid = " + studid + " AND subjid = " + subjid;
+        String checkEnrollment = "SELECT COUNT(*) FROM Enroll WHERE studid = ? AND subjid = ?";
         
         try {
             // Check if student exists
-            ESystem.rs = ESystem.st.executeQuery(checkStudent);
-            if (!ESystem.rs.next() || ESystem.rs.getInt(1) == 0) {
-                return "Student with ID " + studid + " does not exist";
+            try (PreparedStatement ps = ESystem.con.prepareStatement(checkStudent)) {
+                ps.setInt(1, studid);
+                ESystem.rs = ps.executeQuery();
+                if (!ESystem.rs.next() || ESystem.rs.getInt(1) == 0) {
+                    return "Student with ID " + studid + " does not exist";
+                }
             }
             
             // Check if subject exists
-            ESystem.rs = ESystem.st.executeQuery(checkSubject);
-            if (!ESystem.rs.next() || ESystem.rs.getInt(1) == 0) {
-                return "Subject with ID " + subjid + " does not exist";
+            try (PreparedStatement ps = ESystem.con.prepareStatement(checkSubject)) {
+                ps.setInt(1, subjid);
+                ESystem.rs = ps.executeQuery();
+                if (!ESystem.rs.next() || ESystem.rs.getInt(1) == 0) {
+                    return "Subject with ID " + subjid + " does not exist";
+                }
             }
             
             // Check if already enrolled
-            ESystem.rs = ESystem.st.executeQuery(checkEnrollment);
-            if (ESystem.rs.next() && ESystem.rs.getInt(1) > 0) {
-                return "Student is already enrolled in this subject";
+            try (PreparedStatement ps = ESystem.con.prepareStatement(checkEnrollment)) {
+                ps.setInt(1, studid);
+                ps.setInt(2, subjid);
+                ESystem.rs = ps.executeQuery();
+                if (ESystem.rs.next() && ESystem.rs.getInt(1) > 0) {
+                    return "Student is already enrolled in this subject";
+                }
             }
             
             // If all checks pass, proceed with enrollment
