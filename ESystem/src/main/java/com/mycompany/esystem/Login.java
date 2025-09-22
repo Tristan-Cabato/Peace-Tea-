@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.mycompany.esystem;
+import java.io.File;
 import java.sql.*;
 import javax.swing.*;
 import java.util.*;
@@ -331,9 +332,11 @@ public class Login extends javax.swing.JFrame {
                     GradeForm gradeForm = new GradeForm();
                     gradeForm.setVisible(true);
                 } else {
+                    int pureID = Integer.parseInt(this.loggedInUsername.replaceAll("[^0-9]", ""));
                     // Student or other user with only SELECT access
-                    StudentRegistration studentForm = new StudentRegistration();
-                    studentForm.setVisible(true);
+                    generateStudentRecord(pureID);
+//                    StudentRegistration studentForm = new StudentRegistration();
+//                    studentForm.setVisible(true);
                 }
                 
                 this.dispose();
@@ -390,6 +393,25 @@ public class Login extends javax.swing.JFrame {
             }
         } catch (Exception ignored) {}
         return new int[] { year, termOrder };
+    }
+
+    
+    
+    // In StudentsForm.java, add this method:
+    private void generateStudentRecord(int studentId) {
+        try {
+            File pdfFile = Reports.generateStudentRecord(studentId);
+            JOptionPane.showMessageDialog(this, 
+                "Record saved to: " + pdfFile.getAbsolutePath(), 
+                "Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+            Reports.openPDF(pdfFile);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error generating record: " + e.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**

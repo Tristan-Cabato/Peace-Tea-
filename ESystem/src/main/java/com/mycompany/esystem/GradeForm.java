@@ -336,9 +336,20 @@ public class GradeForm extends javax.swing.JFrame {
         model.setRowCount(0);
         
         try {
-            String query = "SELECT ID, Code, Description, Units, Schedule, " +
+            String currentUser = ESystem.currentUser;
+            String teacherIdStr = "";
+            
+            int i = 0;
+            while (i < currentUser.length() && Character.isDigit(currentUser.charAt(i))) {
+                teacherIdStr += currentUser.charAt(i);
+                i++;
+            } int teacherId = Integer.parseInt(teacherIdStr);
+            
+            String query = "SELECT s.ID, s.Code, s.Description, s.Units, s.Schedule, " +
                          "(SELECT COUNT(*) FROM Enroll e WHERE e.subjid = s.ID) as StudentCount " +
-                         "FROM subjects s";
+                         "FROM subjects s " +
+                         "JOIN Assign a ON s.ID = a.subid " +
+                         "WHERE a.tid = " + teacherId;
             
             ESystem.rs = ESystem.st.executeQuery(query);
             
@@ -355,6 +366,10 @@ public class GradeForm extends javax.swing.JFrame {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading subjects: " + ex.getMessage(), 
                 "Database Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid teacher ID format in username", "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
     
