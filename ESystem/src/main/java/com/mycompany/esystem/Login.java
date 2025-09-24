@@ -401,10 +401,10 @@ public class Login extends javax.swing.JFrame {
     private void generateStudentRecord(int studentId) {
         try {
             File pdfFile = Reports.generateStudentRecord(studentId);
-            JOptionPane.showMessageDialog(this, 
-                "Record saved to: " + pdfFile.getAbsolutePath(), 
-                "Success", 
-                JOptionPane.INFORMATION_MESSAGE);
+            // JOptionPane.showMessageDialog(this, 
+            //     "Record saved to: " + pdfFile.getAbsolutePath(), 
+            //     "Success", 
+            //     JOptionPane.INFORMATION_MESSAGE);
             Reports.openPDF(pdfFile);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, 

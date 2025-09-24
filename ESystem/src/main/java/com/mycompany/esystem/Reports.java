@@ -6,10 +6,12 @@ package com.mycompany.esystem;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
+import java.awt.Desktop;
 import java.io.*;
 import java.sql.*;
+import java.util.*;
 import javax.swing.*;
-import java.awt.*;
+import java.awt.GraphicsEnvironment;
 
 /**
  * Records class for generating PDF reports
@@ -21,15 +23,30 @@ public class Reports {
     private static final com.itextpdf.text.Font TITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
     private static final com.itextpdf.text.Font HEADER_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
     private static final com.itextpdf.text.Font NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10);
+    private static final String FILE_PATH = System.getProperty("user.dir") + "/src/main/java/com/mycompany/esystem/";
 
     /**
      * Generates a student record PDF for StudentsForm
      * @param studentId the student ID
      * @return the generated PDF file
      */
+
+     public static String generateTime(int studentId) {
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH) + 1;
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY); 
+        int minute = calendar.get(Calendar.MINUTE);
+        int second = calendar.get(Calendar.SECOND);
+    
+        return String.format("%d_%02d%04d%02d_%02d%02d%02d", 
+                            studentId, month, year, day, hour, minute, second);
+    }
+
     public static File generateStudentRecord(int studentId) throws Exception {
-        String fileName = System.getProperty("user.dir") + "/StudentRecord_" + studentId + ".pdf";
-        return createStudentPDF(studentId, fileName, "STUDENT RECORD");
+        String fileName = FILE_PATH + "record.pdf";
+        return createStudentPDF(studentId, fileName, "STUDENT GRADE SHEET");
     }
 
     /**
@@ -38,12 +55,11 @@ public class Reports {
      * @return the generated PDF file
      */
     public static File generateGradeReport(int studentId) throws Exception {
-        String fileName = System.getProperty("user.dir") + "/GradeReport_" + studentId + "_" + System.currentTimeMillis() + ".pdf";
+        String fileName = FILE_PATH + generateTime(studentId) + ".pdf";
         return createGradePDF(studentId, fileName);
     }
 
     private static File createStudentPDF(int studentId, String fileName, String title) throws Exception {
-        // Get student information
         String studentQuery = "SELECT * FROM students WHERE ID = " + studentId;
         ESystem.rs = ESystem.st.executeQuery(studentQuery);
 
@@ -51,9 +67,11 @@ public class Reports {
             throw new Exception("Student not found in database");
         }
 
+        String studentID = ESystem.rs.getString("ID");
         String studentName = ESystem.rs.getString("Name");
         String yearLevel = ESystem.rs.getString("YearLevel");
-        String studentInfo = "Name: " + studentName + " | Year Level: " + yearLevel + " | ID: " + studentId;
+        String course = ESystem.rs.getString("Address");
+        String contact = ESystem.rs.getString("Contact");
 
         // Create PDF document
         Document document = new Document(PageSize.A4);
@@ -62,21 +80,82 @@ public class Reports {
         try (FileOutputStream fos = new FileOutputStream(file)) {
             PdfWriter.getInstance(document, fos);
             document.open();
-
-            // Add title
+    
+            // Add logo at the very top
+            try {
+                String logoPath = System.getProperty("user.dir") + "/src/main/resources/logo.png";
+                Image logo = Image.getInstance(logoPath);
+                logo.setAlignment(Element.ALIGN_CENTER);
+                logo.scaleToFit(PageSize.A4.getWidth(), 100);
+                logo.setSpacingAfter(10);
+                document.add(logo);
+            } catch (Exception e) {
+                System.out.println("Logo not found: " + e.getMessage());
+            }
+    
+            // Add title below the logo
             Paragraph titlePara = new Paragraph(title, TITLE_FONT);
             titlePara.setAlignment(Element.ALIGN_CENTER);
             titlePara.setSpacingAfter(20);
             document.add(titlePara);
 
-            // Add student info
-            Paragraph info = new Paragraph(studentInfo, NORMAL_FONT);
-            info.setSpacingAfter(15);
-            document.add(info);
+            // Create a table with 2 columns for student info
+            PdfPTable infoTable = new PdfPTable(2);
+            infoTable.setWidthPercentage(100);
+            infoTable.setSpacingAfter(15);
+            infoTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+
+            // Left column
+            PdfPTable leftTable = new PdfPTable(1);
+            leftTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            leftTable.addCell(new Phrase("Student ID: " + studentId, NORMAL_FONT));
+            leftTable.addCell(new Phrase("Student Name: " + studentName, NORMAL_FONT));
+            leftTable.addCell(new Phrase("Student Year: " + yearLevel, NORMAL_FONT));
+
+            // Right column
+            PdfPTable rightTable = new PdfPTable(1);
+            rightTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            rightTable.addCell(new Phrase("School Year: " + ESystem.currentDB, NORMAL_FONT));
+            rightTable.addCell(new Phrase("Student Course: " + (course != null ? course : "N/A"), NORMAL_FONT));
+
+            // Add both tables to the main table
+            infoTable.addCell(leftTable);
+            infoTable.addCell(rightTable);
+
+            // Add the table to the document
+            document.add(infoTable);
 
             // Add enrolled subjects with grades
             PdfPTable table = createSubjectsTable(studentId);
             document.add(table);
+
+            // Create a table with 2 columns for the footer
+            PdfPTable footerTable = new PdfPTable(2);
+            footerTable.setWidthPercentage(100);
+            footerTable.setSpacingBefore(15f);  // Add some space before the footer
+            footerTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+
+            // Left cell - Total Subjects
+            PdfPCell leftCell = new PdfPCell(new Phrase("Total Subjects Listed: " + (table.getRows().size() - 1), NORMAL_FONT));
+            leftCell.setBorder(Rectangle.NO_BORDER);
+            leftCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+            footerTable.addCell(leftCell);
+
+            // Right cell - Empty for the first row
+            PdfPCell rightCell = new PdfPCell(new Phrase(""));
+            rightCell.setBorder(Rectangle.NO_BORDER);
+            footerTable.addCell(rightCell);
+
+            // Add the footer table to the document
+            document.add(footerTable);
+
+            // Add the signature on a new line
+            Paragraph signaturePara = new Paragraph();
+            signaturePara.setAlignment(Element.ALIGN_RIGHT);
+            signaturePara.add(new Phrase("_________________", NORMAL_FONT));
+            signaturePara.add(Chunk.NEWLINE);
+            signaturePara.add(new Phrase("Teacher's Signature", NORMAL_FONT));
+            document.add(signaturePara);
 
             document.close();
 
@@ -84,69 +163,238 @@ public class Reports {
         }
     }
 
+    private static PdfPTable createGradeTable(int studentId) throws Exception {
+        int subjectCount = 0;
+        // Create table with 5 columns
+        PdfPTable table = new PdfPTable(5);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10);
+        
+        // Set column widths (wider first column)
+        float[] columnWidths = {2f, 2f, 5f, 1f, 1f};
+        table.setWidths(columnWidths);
+    
+        // Add headers with bottom border only
+        PdfPCell header1 = new PdfPCell(new Phrase("Subject ID", HEADER_FONT));
+        PdfPCell header2 = new PdfPCell(new Phrase("Subject Code", HEADER_FONT));
+        PdfPCell header3 = new PdfPCell(new Phrase("Description", HEADER_FONT));
+        PdfPCell header4 = new PdfPCell(new Phrase("Final", HEADER_FONT));
+        PdfPCell header5 = new PdfPCell(new Phrase("Credit", HEADER_FONT));
+        
+        // Set header styling
+        for (PdfPCell header : new PdfPCell[]{header1, header2, header3, header4, header5}) {
+            header.setBorder(Rectangle.BOTTOM);
+            header.setPadding(5);
+            header.setHorizontalAlignment(Element.ALIGN_CENTER);
+        }
+        
+        table.addCell(header1);
+        table.addCell(header2);
+        table.addCell(header3);
+        table.addCell(header4);
+        table.addCell(header5);
+    
+        // Query to get subjects with grades, grouped by database
+        String query = "SELECT s.ID, s.Code, s.Description, " +
+                     "COALESCE(g.Final, 'N/A') as Final, s.Units as Credit, " +
+                     "DATABASE() as DatabaseName " +
+                     "FROM subjects s " +
+                     "LEFT JOIN Enroll e ON s.ID = e.subjid " +
+                     "LEFT JOIN Grades g ON e.eid = g.GradeID " +
+                     "WHERE e.studid = " + studentId + " " +
+                     "ORDER BY DatabaseName, s.Code";
+    
+        ESystem.rs = ESystem.st.executeQuery(query);
+    
+        String currentDb = null;
+        
+        // Add data rows
+        while (ESystem.rs.next()) {
+            String dbName = ESystem.rs.getString("DatabaseName");
+            
+            // Add database header if it's a new database
+            if (!dbName.equals(currentDb)) {
+                currentDb = dbName;
+                
+                // Add empty row for spacing
+                addEmptyRow(table, 5);
+                
+                // Add database label with bottom border
+                PdfPCell dbHeader = new PdfPCell(new Phrase("Database: " + dbName, NORMAL_FONT));
+                dbHeader.setColspan(5);
+                dbHeader.setBorder(Rectangle.BOTTOM);
+                dbHeader.setPadding(5);
+                table.addCell(dbHeader);
+            } subjectCount++;
+            
+            // Add subject data with no borders
+            addCellNoBorder(table, ESystem.rs.getString("ID"));
+            addCellNoBorder(table, ESystem.rs.getString("Code"));
+            addCellNoBorder(table, ESystem.rs.getString("Description"));
+            addCellNoBorder(table, ESystem.rs.getString("Final"));
+            addCellNoBorder(table, ESystem.rs.getString("Credit"));
+        }
+    
+        return new Object[]{table, subjectCount};
+    }
+    
+    // Helper method to add cells with no borders
+    private static void addCellNoBorder(PdfPTable table, String text) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, NORMAL_FONT));
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setPadding(5);
+        table.addCell(cell);
+    }
+    
+    // Helper method to add empty row
+    private static void addEmptyRow(PdfPTable table, int cols) {
+        PdfPCell emptyCell = new PdfPCell(new Phrase(" "));
+        emptyCell.setColspan(cols);
+        emptyCell.setBorder(Rectangle.NO_BORDER);
+        emptyCell.setFixedHeight(10); // Adjust height as needed
+        table.addCell(emptyCell);
+    }
+
     private static File createGradePDF(int studentId, String fileName) throws Exception {
-        return createStudentPDF(studentId, fileName, "STUDENT GRADE REPORT");
+        String studentQuery = "SELECT * FROM students WHERE ID = " + studentId;
+        ESystem.rs = ESystem.st.executeQuery(studentQuery);
+    
+        if (!ESystem.rs.next()) {
+            throw new Exception("Student not found in database");
+        }
+    
+        String studentID = ESystem.rs.getString("ID");
+        String studentName = ESystem.rs.getString("Name");
+        String course = ESystem.rs.getString("Address"); // Using Address as Course
+        String gender = ESystem.rs.getString("Gender");
+    
+        // Create PDF document
+        Document document = new Document(PageSize.A4);
+        File file = new File(fileName);
+    
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            PdfWriter.getInstance(document, fos);
+            document.open();
+            
+            // Add logo at the very top
+            try {
+                String logoPath = System.getProperty("user.dir") + "/src/main/resources/logo.png";
+                Image logo = Image.getInstance(logoPath);
+                logo.setAlignment(Element.ALIGN_CENTER);
+                logo.scaleToFit(PageSize.A4.getWidth(), 100);
+                logo.setSpacingAfter(10);
+                document.add(logo);
+            } catch (Exception e) {
+                System.out.println("Logo not found: " + e.getMessage());
+            }
+    
+            // Add title
+            Paragraph titlePara = new Paragraph("OFFICIAL TRANSCRIPT OF RECORDS", TITLE_FONT);
+            titlePara.setAlignment(Element.ALIGN_CENTER);
+            titlePara.setSpacingAfter(20);
+            document.add(titlePara);
+    
+            // Student info table
+            PdfPTable infoTable = new PdfPTable(2);
+            infoTable.setWidthPercentage(100);
+            infoTable.setSpacingAfter(15);
+            infoTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+    
+            // Left column
+            PdfPTable leftTable = new PdfPTable(1);
+            leftTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            leftTable.addCell(new Phrase("Student ID: " + studentID, NORMAL_FONT));
+            leftTable.addCell(new Phrase("Student Course: " + (course != null ? course : "N/A"), NORMAL_FONT));
+    
+            // Right column
+            PdfPTable rightTable = new PdfPTable(1);
+            rightTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            rightTable.addCell(new Phrase("Student Name: " + studentName, NORMAL_FONT));
+            rightTable.addCell(new Phrase("Gender: " + (gender != null ? gender : "N/A"), NORMAL_FONT));
+    
+            infoTable.addCell(leftTable);
+            infoTable.addCell(rightTable);
+            document.add(infoTable);
+    
+            // Add subjects table and get subject count
+            Object[] result = createGradeTable(studentId);
+            PdfPTable gradeTable = (PdfPTable) result[0];
+            int subjectCount = (int) result[1];
+            document.add(gradeTable);
+    
+            // Add footer with total subjects
+            PdfPTable footerTable = new PdfPTable(2);
+            footerTable.setWidthPercentage(100);
+            footerTable.setSpacingBefore(15f);
+            footerTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+    
+            // Left cell - Total Subjects
+            PdfPCell leftCell = new PdfPCell(new Phrase("Total Subjects Listed: " + subjectCount, NORMAL_FONT));
+            leftCell.setBorder(Rectangle.NO_BORDER);
+            leftCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+            footerTable.addCell(leftCell);
+    
+            // Right cell - Empty
+            PdfPCell rightCell = new PdfPCell(new Phrase(""));
+            rightCell.setBorder(Rectangle.NO_BORDER);
+            footerTable.addCell(rightCell);
+    
+            document.add(footerTable);
+    
+            // Add signature
+            Paragraph signaturePara = new Paragraph();
+            signaturePara.setAlignment(Element.ALIGN_RIGHT);
+            signaturePara.add(new Phrase("_________________", NORMAL_FONT));
+            signaturePara.add(Chunk.NEWLINE);
+            signaturePara.add(new Phrase("Teacher's Signature", NORMAL_FONT));
+            document.add(signaturePara);
+    
+            document.close();
+            return file;
+        }
     }
 
     private static PdfPTable createSubjectsTable(int studentId) throws Exception {
-        PdfPTable table = new PdfPTable(9);
+        // Updated to 5 columns: SUBJECT CODE, DESCRIPTION, PRELIM, MIDTERM, FINAL
+        PdfPTable table = new PdfPTable(5);
         table.setWidthPercentage(100);
         table.setSpacingBefore(10);
 
         // Add headers
         addTableHeader(table, "SUBJECT CODE");
         addTableHeader(table, "DESCRIPTION");
-        addTableHeader(table, "UNITS");
-        addTableHeader(table, "SCHEDULE");
         addTableHeader(table, "PRELIM");
         addTableHeader(table, "MIDTERM");
-        addTableHeader(table, "PREFINAL");
         addTableHeader(table, "FINAL");
-        addTableHeader(table, "STATUS");
 
         // Query enrolled subjects with grades
-        String query = "SELECT s.Code, s.Description, s.Units, s.Schedule, " +
-                     "g.Prelim, g.Midterm, g.Prefinal, g.Final " +
+        //right here
+        String query = "SELECT s.ID, s.Description, " +
+                     "COALESCE(g.Prelim, 'N/A') as Prelim, " +
+                     "COALESCE(g.Midterm, 'N/A') as Midterm, " +
+                     "COALESCE(g.Final, 'N/A') as Final " +
                      "FROM subjects s " +
-                     "JOIN Enroll e ON s.ID = e.subjid " +
-                     "LEFT JOIN Grades g ON e.eid = g.eid " +
+                     "LEFT JOIN Enroll e ON s.ID = e.subjid " +
+                     "LEFT JOIN Grades g ON e.eid = g.GradeID " +
                      "WHERE e.studid = " + studentId + " " +
-                     "ORDER BY s.Code";
+                     "ORDER BY s.ID";
 
         ESystem.rs = ESystem.st.executeQuery(query);
 
         // Add data rows
         while (ESystem.rs.next()) {
-            String subjectCode = ESystem.rs.getString("Code");
+            String subjectCode = ESystem.rs.getString("ID");
             String description = ESystem.rs.getString("Description");
-            String units = ESystem.rs.getString("Units");
-            String schedule = ESystem.rs.getString("Schedule");
             String prelim = ESystem.rs.getString("Prelim");
             String midterm = ESystem.rs.getString("Midterm");
-            String prefinal = ESystem.rs.getString("Prefinal");
             String finalGrade = ESystem.rs.getString("Final");
-            String status = calculateStatus(prelim, midterm, prefinal, finalGrade);
 
             // Add cells to table
             addTableCell(table, subjectCode);
             addTableCell(table, description);
-            addTableCell(table, units);
-            addTableCell(table, schedule);
-            addTableCell(table, prelim != null ? prelim : "N/A");
-            addTableCell(table, midterm != null ? midterm : "N/A");
-            addTableCell(table, prefinal != null ? prefinal : "N/A");
-            addTableCell(table, finalGrade != null ? finalGrade : "N/A");
-
-            // Color status cell based on value
-            PdfPCell statusCell = new PdfPCell(new Phrase(status, NORMAL_FONT));
-            if (status.equals("PASSED")) {
-                statusCell.setBackgroundColor(new BaseColor(200, 255, 200)); // Light green
-            } else if (status.equals("FAILED")) {
-                statusCell.setBackgroundColor(new BaseColor(255, 200, 200)); // Light red
-            } else if (status.equals("ONGOING")) {
-                statusCell.setBackgroundColor(new BaseColor(255, 255, 200)); // Light yellow
-            }
-            table.addCell(statusCell);
+            addTableCell(table, prelim);
+            addTableCell(table, midterm);
+            addTableCell(table, finalGrade);
         }
 
         return table;
