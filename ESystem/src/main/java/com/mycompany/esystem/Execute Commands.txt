@@ -1,8 +1,796 @@
-DROP USER 1001a;
-DROP USER 1002a;
-DROP USER 1003a;
-DROP USER 1004a;
-DROP USER 3001b;
-DROP USER 3002b;
-DROP USER 3003b;
-DROP USER 3004b;
+-- 1st Semester 2026-2027
+CREATE DATABASE IF NOT EXISTS 1stSem_Sy2026_2027;
+USE 1stSem_Sy2026_2027;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+-- 2nd Semester 2026-2027
+CREATE DATABASE IF NOT EXISTS 2ndSem_Sy2026_2027;
+USE 2ndSem_Sy2026_2027;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+-- Summer 2026-2027
+CREATE DATABASE IF NOT EXISTS Summer_Sy2026_2027;
+USE Summer_Sy2026_2027;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+-- 1st Semester 2027-2028
+CREATE DATABASE IF NOT EXISTS 1stSem_Sy2027_2028;
+USE 1stSem_Sy2027_2028;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+
+-- 2nd Semester 2027-2028
+CREATE DATABASE IF NOT EXISTS 2ndSem_Sy2027_2028;
+USE 2ndSem_Sy2027_2028;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+
+-- Summer 2027-2028
+CREATE DATABASE IF NOT EXISTS Summer_Sy2027_2028;
+USE Summer_Sy2027_2028;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+
+-- 1st Semester 2028-2029
+CREATE DATABASE IF NOT EXISTS 1stSem_Sy2028_2029;
+USE 1stSem_Sy2028_2029;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+
+-- 2nd Semester 2028-2029
+CREATE DATABASE IF NOT EXISTS 2ndSem_Sy2028_2029;
+USE 2ndSem_Sy2028_2029;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+
+-- Summer 2028-2029
+CREATE DATABASE IF NOT EXISTS Summer_Sy2028_2029;
+USE Summer_Sy2028_2029;
+
+CREATE TABLE IF NOT EXISTS students (
+    ID INT PRIMARY KEY, 
+    Name VARCHAR(100) NOT NULL, 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Gender VARCHAR(10), 
+    YearLevel INT
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    ID INT PRIMARY KEY, 
+    Code VARCHAR(20) NOT NULL, 
+    Description VARCHAR(100) NOT NULL, 
+    Units INT, 
+    Schedule VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS teachers (
+    ID INT AUTO_INCREMENT PRIMARY KEY, 
+    Name VARCHAR(100), 
+    Address VARCHAR(100), 
+    Contact INT, 
+    Department VARCHAR(100), 
+    UNIQUE (ID)
+);
+
+CREATE TABLE IF NOT EXISTS Enroll (
+    eid INT NOT NULL, 
+    studid INT NOT NULL, 
+    subjid INT NOT NULL, 
+    PRIMARY KEY (eid), 
+    UNIQUE (studid, subjid)
+);
+
+CREATE TABLE IF NOT EXISTS Assign (
+    tid INT NOT NULL, 
+    subid INT NOT NULL, 
+    PRIMARY KEY (tid, subid), 
+    UNIQUE (subid), 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Grades (
+    GradeID INT AUTO_INCREMENT PRIMARY KEY, 
+    eid INT NOT NULL, 
+    Prelim TEXT, 
+    Midterm TEXT, 
+    Prefinal TEXT, 
+    Final TEXT, 
+    UNIQUE (eid), 
+    FOREIGN KEY (eid) REFERENCES Enroll(eid) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS TransactionCharges (
+    TransID INT, 
+    Department TEXT, 
+    SubjUnits DECIMAL(10,2), 
+    Insurance DECIMAL(10,2), 
+    Computer DECIMAL(10,2), 
+    Laboratory DECIMAL(10,2), 
+    Cultural DECIMAL(10,2), 
+    Library DECIMAL(10,2), 
+    Facility DECIMAL(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS Invoice (
+    Invoicenum INT, 
+    studid INT, 
+    TransID INT
+);
+
+ALTER TABLE Enroll 
+    ADD CONSTRAINT fk_enroll_student 
+    FOREIGN KEY (studid) REFERENCES students(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_enroll_subject 
+    FOREIGN KEY (subjid) REFERENCES subjects(ID) ON DELETE CASCADE;
+
+ALTER TABLE Assign 
+    ADD CONSTRAINT fk_assign_teacher 
+    FOREIGN KEY (tid) REFERENCES teachers(ID) ON DELETE CASCADE, 
+    ADD CONSTRAINT fk_assign_subject 
+    FOREIGN KEY (subid) REFERENCES subjects(ID) ON DELETE CASCADE;

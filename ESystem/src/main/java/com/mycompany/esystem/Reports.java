@@ -6,10 +6,13 @@ package com.mycompany.esystem;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
+import com.itextpdf.text.pdf.draw.LineSeparator;
 import java.awt.Desktop;
 import java.io.*;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Calendar;
 import javax.swing.*;
 import java.awt.GraphicsEnvironment;
 
@@ -23,7 +26,8 @@ public class Reports {
     private static final com.itextpdf.text.Font TITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
     private static final com.itextpdf.text.Font HEADER_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
     private static final com.itextpdf.text.Font NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10);
-    private static final String FILE_PATH = System.getProperty("user.dir") + "/src/main/java/com/mycompany/esystem/";
+    private static final com.itextpdf.text.Font BOLD_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10); // Add this line
+    private static final String FILE_PATH = System.getProperty("user.dir") + "/src/main/java/com/mycompany/esystem/Docs/";
 
     /**
      * Generates a student record PDF for StudentsForm
@@ -108,15 +112,15 @@ public class Reports {
             // Left column
             PdfPTable leftTable = new PdfPTable(1);
             leftTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-            leftTable.addCell(new Phrase("Student ID: " + studentId, NORMAL_FONT));
-            leftTable.addCell(new Phrase("Student Name: " + studentName, NORMAL_FONT));
-            leftTable.addCell(new Phrase("Student Year: " + yearLevel, NORMAL_FONT));
+            leftTable.addCell(createBoldLabel("Student ID", studentID));
+            leftTable.addCell(createBoldLabel("Student Name", studentName));
+            leftTable.addCell(createBoldLabel("Student Year", yearLevel));
 
             // Right column
             PdfPTable rightTable = new PdfPTable(1);
             rightTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
-            rightTable.addCell(new Phrase("School Year: " + ESystem.currentDB, NORMAL_FONT));
-            rightTable.addCell(new Phrase("Student Course: " + (course != null ? course : "N/A"), NORMAL_FONT));
+            rightTable.addCell(createBoldLabel("School Year", ESystem.currentDB));
+            rightTable.addCell(createBoldLabel("Student Course", (course != null ? course : "N/A")));
 
             // Add both tables to the main table
             infoTable.addCell(leftTable);
@@ -136,7 +140,8 @@ public class Reports {
             footerTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
 
             // Left cell - Total Subjects
-            PdfPCell leftCell = new PdfPCell(new Phrase("Total Subjects Listed: " + (table.getRows().size() - 1), NORMAL_FONT));
+            Font boldLargeFont = new Font(Font.FontFamily.HELVETICA, NORMAL_FONT.getSize() + 2, Font.BOLD);
+            PdfPCell leftCell = new PdfPCell(new Phrase("Number of Subjects Listed: " + (table.getRows().size() - 1), boldLargeFont));
             leftCell.setBorder(Rectangle.NO_BORDER);
             leftCell.setHorizontalAlignment(Element.ALIGN_LEFT);
             footerTable.addCell(leftCell);
@@ -149,12 +154,28 @@ public class Reports {
             // Add the footer table to the document
             document.add(footerTable);
 
+            // Add separator line with custom styling
+            LineSeparator line = new LineSeparator();
+            line.setLineWidth(1.5f);  // Make the line thicker
+            line.setLineColor(BaseColor.BLACK);  // Ensure it's black
+            line.setPercentage(80);  // Make it 80% of the page width
+            line.setAlignment(Element.ALIGN_CENTER);  // Center the line
+
+            Paragraph separator = new Paragraph();
+            separator.add(new Chunk(line));
+            separator.setSpacingAfter(15f);
+            separator.setSpacingBefore(10f);
+            document.add(separator);
+
+            // Then the line break
+            document.add(Chunk.NEWLINE);
+
             // Add the signature on a new line
             Paragraph signaturePara = new Paragraph();
             signaturePara.setAlignment(Element.ALIGN_RIGHT);
             signaturePara.add(new Phrase("_________________", NORMAL_FONT));
             signaturePara.add(Chunk.NEWLINE);
-            signaturePara.add(new Phrase("Teacher's Signature", NORMAL_FONT));
+            signaturePara.add(new Phrase("Registrar", NORMAL_FONT));
             document.add(signaturePara);
 
             document.close();
@@ -163,76 +184,112 @@ public class Reports {
         }
     }
 
-    private static PdfPTable createGradeTable(int studentId) throws Exception {
+    private static Object[] createGradeTable(int studentId) throws Exception {
         int subjectCount = 0;
-        // Create table with 5 columns
         PdfPTable table = new PdfPTable(5);
         table.setWidthPercentage(100);
         table.setSpacingBefore(10);
         
-        // Set column widths (wider first column)
-        float[] columnWidths = {2f, 2f, 5f, 1f, 1f};
+        float[] columnWidths = {1.5f, 2f, 4f, 1.5f, 1f};
         table.setWidths(columnWidths);
     
-        // Add headers with bottom border only
-        PdfPCell header1 = new PdfPCell(new Phrase("Subject ID", HEADER_FONT));
-        PdfPCell header2 = new PdfPCell(new Phrase("Subject Code", HEADER_FONT));
-        PdfPCell header3 = new PdfPCell(new Phrase("Description", HEADER_FONT));
-        PdfPCell header4 = new PdfPCell(new Phrase("Final", HEADER_FONT));
-        PdfPCell header5 = new PdfPCell(new Phrase("Credit", HEADER_FONT));
-        
-        // Set header styling
-        for (PdfPCell header : new PdfPCell[]{header1, header2, header3, header4, header5}) {
-            header.setBorder(Rectangle.BOTTOM);
-            header.setPadding(5);
-            header.setHorizontalAlignment(Element.ALIGN_CENTER);
-        }
-        
-        table.addCell(header1);
-        table.addCell(header2);
-        table.addCell(header3);
-        table.addCell(header4);
-        table.addCell(header5);
+        // Add headers
+        addTableHeader(table, "Subject ID");
+        addTableHeader(table, "Code");
+        addTableHeader(table, "Descriptive Title");
+        addTableHeader(table, "Final");
+        addTableHeader(table, "Credit");
     
-        // Query to get subjects with grades, grouped by database
-        String query = "SELECT s.ID, s.Code, s.Description, " +
-                     "COALESCE(g.Final, 'N/A') as Final, s.Units as Credit, " +
-                     "DATABASE() as DatabaseName " +
-                     "FROM subjects s " +
-                     "LEFT JOIN Enroll e ON s.ID = e.subjid " +
-                     "LEFT JOIN Grades g ON e.eid = g.GradeID " +
-                     "WHERE e.studid = " + studentId + " " +
-                     "ORDER BY DatabaseName, s.Code";
-    
-        ESystem.rs = ESystem.st.executeQuery(query);
-    
-        String currentDb = null;
+        // Get list of all databases that match the pattern
+        String getDbsQuery = "SHOW DATABASES WHERE `Database` LIKE '%_Sy%' OR `Database` LIKE '%1stSem%' OR `Database` LIKE '%2ndSem%' OR `Database` LIKE '%summer%'";
+        String currentDb = ESystem.con.getCatalog();
+        ResultSet dbs = null;
         
-        // Add data rows
-        while (ESystem.rs.next()) {
-            String dbName = ESystem.rs.getString("DatabaseName");
+        try {
+            // Get all database names
+            dbs = ESystem.st.executeQuery(getDbsQuery);
+            List<String> databaseNames = new ArrayList<>();
             
-            // Add database header if it's a new database
-            if (!dbName.equals(currentDb)) {
-                currentDb = dbName;
-                
-                // Add empty row for spacing
-                addEmptyRow(table, 5);
-                
-                // Add database label with bottom border
-                PdfPCell dbHeader = new PdfPCell(new Phrase("Database: " + dbName, NORMAL_FONT));
-                dbHeader.setColspan(5);
-                dbHeader.setBorder(Rectangle.BOTTOM);
-                dbHeader.setPadding(5);
-                table.addCell(dbHeader);
-            } subjectCount++;
+            // First collect all database names to avoid ResultSet conflicts
+            while (dbs.next()) {
+                databaseNames.add(dbs.getString(1));
+            }
             
-            // Add subject data with no borders
-            addCellNoBorder(table, ESystem.rs.getString("ID"));
-            addCellNoBorder(table, ESystem.rs.getString("Code"));
-            addCellNoBorder(table, ESystem.rs.getString("Description"));
-            addCellNoBorder(table, ESystem.rs.getString("Final"));
-            addCellNoBorder(table, ESystem.rs.getString("Credit"));
+            // Close the ResultSet after collecting database names
+            if (dbs != null) {
+                try { dbs.close(); } catch (SQLException e) { /* ignore */ }
+            }
+    
+            // Now process each database
+            for (String dbName : databaseNames) {
+                ResultSet checkRs = null;
+                ResultSet rs = null;
+                try {
+                    // Switch to the database
+                    ESystem.st.execute("USE " + dbName);
+                    
+                    // Check if student has any enrollments in this database
+                    String checkQuery = "SELECT COUNT(*) as count FROM Enroll WHERE studid = " + studentId;
+                    checkRs = ESystem.st.executeQuery(checkQuery);
+                    if (checkRs.next() && checkRs.getInt("count") == 0) {
+                        continue;  // Skip if no enrollments
+                    }
+    
+                    // Update the query in the createGradeTable method to:
+                    String query = "SELECT " +
+                                "s.ID as 'Subject ID', " +
+                                "s.Code as Code, " +
+                                "s.Description as 'Descriptive Title', " +
+                                "IFNULL(g.Final, 'No Grade') as Final, " +
+                                "s.Units as Credit " +
+                                "FROM subjects s " +
+                                "INNER JOIN Enroll e ON s.ID = e.subjid " +
+                                "LEFT JOIN Grades g ON e.eid = g.GradeID " +
+                                "WHERE e.studid = " + studentId + " " +
+                                "ORDER BY s.Code";
+    
+                    rs = ESystem.st.executeQuery(query);
+                    boolean hasRecords = false;
+    
+                    // Add data to table
+                    while (rs.next()) {
+                        if (!hasRecords) {
+                            // Add database header only if we have records
+                            addEmptyRow(table, 5);
+                            Font underlineFont = new Font(HEADER_FONT.getBaseFont(), HEADER_FONT.getSize(), Font.UNDERLINE);
+                            PdfPCell dbHeader = new PdfPCell(new Phrase(dbName, underlineFont));
+                            dbHeader.setColspan(5);
+                            dbHeader.setBorder(Rectangle.NO_BORDER);
+                            dbHeader.setPadding(5);
+                            table.addCell(dbHeader);
+                            hasRecords = true;
+                        }
+                        
+                        subjectCount++;
+                        addCellNoBorder(table, rs.getString("Subject ID"));
+                        addCellNoBorder(table, rs.getString("Code"));
+                        addCellNoBorder(table, rs.getString("Descriptive Title"));
+                        addCellNoBorder(table, rs.getString("Final"));
+                        addCellNoBorder(table, rs.getString("Credit"));
+                    }
+                } catch (SQLException e) {
+                    System.err.println("Error processing database " + dbName + ": " + e.getMessage());
+                    e.printStackTrace();
+                } finally {
+                    // Close ResultSets
+                    if (checkRs != null) try { checkRs.close(); } catch (SQLException e) { /* ignore */ }
+                    if (rs != null) try { rs.close(); } catch (SQLException e) { /* ignore */ }
+                }
+            }
+        } finally {
+            // Close the main ResultSet if it's still open
+            if (dbs != null) {
+                try { dbs.close(); } catch (SQLException e) { /* ignore */ }
+            }
+            // Switch back to the original database
+            if (currentDb != null) {
+                ESystem.st.execute("USE " + currentDb);
+            }
         }
     
         return new Object[]{table, subjectCount};
@@ -341,17 +398,135 @@ public class Reports {
     
             document.add(footerTable);
     
-            // Add signature
-            Paragraph signaturePara = new Paragraph();
-            signaturePara.setAlignment(Element.ALIGN_RIGHT);
-            signaturePara.add(new Phrase("_________________", NORMAL_FONT));
-            signaturePara.add(Chunk.NEWLINE);
-            signaturePara.add(new Phrase("Teacher's Signature", NORMAL_FONT));
-            document.add(signaturePara);
+            // ADD THE LINE SEPARATOR HERE - right after total subjects and before grading systems
+            LineSeparator line = new LineSeparator();
+            line.setLineWidth(1f);
+            line.setLineColor(BaseColor.BLACK);
+            line.setPercentage(90);
+            line.setAlignment(Element.ALIGN_CENTER);
+    
+            Paragraph separator = new Paragraph();
+            separator.add(new Chunk(line));
+            separator.setSpacingAfter(15f);
+            separator.setSpacingBefore(10f);
+            document.add(separator);
+    
+            // Add line break after total subjects
+            document.add(Chunk.NEWLINE);
+    
+            // Add grading system tables
+            PdfPTable gradingSystemsTable = new PdfPTable(2);
+            gradingSystemsTable.setWidthPercentage(100);
+            gradingSystemsTable.setSpacingAfter(10f);
+            gradingSystemsTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+    
+            // Left grading system
+            String leftGrading = "Grading System up to SY 1981-82\n\n" +
+                               "95-100 = 1.0 = Excellent\n" +
+                               "90-94  = 1.5 = Very Good\n" +
+                               "85-89  = 2.0 = Good\n" +
+                               "80-84  = 2.5 = Fair\n" +
+                               "75-79  = 3.0 = Passed\n" +
+                               "Below 75 = 5.0 = Failed";
+    
+            // Right grading system
+            String rightGrading = "New Grading System(1st Sem. SY1982-83 & up)\n\n" +
+                                "95-100 = 1.0 = Excellent\n" +
+                                "90-94  = 1.5 = Very Good\n" +
+                                "85-89  = 2.0 = Good\n" +
+                                "80-84  = 2.5 = Fair\n" +
+                                "75-79  = 3.0 = Passed\n" +
+                                "Below 75 = 5.0 = Failed";
+    
+            PdfPCell leftGradingCell = createGradingSystemCell(leftGrading);
+            PdfPCell rightGradingCell = createGradingSystemCell(rightGrading);
+    
+            gradingSystemsTable.addCell(leftGradingCell);
+            gradingSystemsTable.addCell(rightGradingCell);
+            document.add(gradingSystemsTable);
+    
+            // Add FCF Grades information
+            Paragraph fcfPara = new Paragraph("FOR FCF Grades: O - Outstanding, HS - Highly Satisfactory, MS - Moderately Satisfactory, S - Satisfactory, F - Fair, P - Poor", NORMAL_FONT);
+            fcfPara.setAlignment(Element.ALIGN_LEFT);
+            fcfPara.setSpacingAfter(5f);
+            document.add(fcfPara);
+    
+            // Add Quality Point information
+            Paragraph qualityPara = new Paragraph("Quality Point Equivalent: 1.0 = 4.0, 1.5 = 3.5, 2.0 = 3.0, 2.5 = 2.5, 3.0 = 2.0", NORMAL_FONT);
+            qualityPara.setAlignment(Element.ALIGN_LEFT);
+            qualityPara.setSpacingAfter(15f);
+            document.add(qualityPara);
+    
+            // Add "NOT VALID WITHOUT SCHOOL SEAL"
+            Font boldFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
+            Paragraph sealPara = new Paragraph("NOT VALID WITHOUT SCHOOL SEAL", boldFont);
+            sealPara.setAlignment(Element.ALIGN_LEFT);
+            sealPara.setSpacingAfter(20f);
+            document.add(sealPara);
+    
+            // Add signature tables
+            PdfPTable signatureTable = new PdfPTable(2);
+            signatureTable.setWidthPercentage(100);
+            signatureTable.setSpacingBefore(10f);
+            signatureTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+    
+            // Left signature table - Prepared By
+            PdfPTable leftSignature = new PdfPTable(1);
+            leftSignature.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            
+            Font underlineFont = new Font(Font.FontFamily.HELVETICA, 10, Font.UNDERLINE);
+            
+            leftSignature.addCell(new Phrase("Prepared By: SAFIRE X. ZIKALY", underlineFont));
+            leftSignature.addCell(new Phrase(" ")); // Empty space
+            leftSignature.addCell(new Phrase("Date: " + getCurrentDate(), NORMAL_FONT));
+            
+            PdfPCell leftSigCell = new PdfPCell(leftSignature);
+            leftSigCell.setBorder(Rectangle.NO_BORDER);
+            leftSigCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+    
+            // Right signature table - Checked By and Registrar
+            PdfPTable rightSignature = new PdfPTable(1);
+            rightSignature.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+            
+            rightSignature.addCell(new Phrase("Checked By: TETO KASANE", underlineFont));
+            rightSignature.addCell(new Phrase("Registrar: DR. BIWA HAYAHIDE", underlineFont));
+            
+            PdfPCell rightSigCell = new PdfPCell(rightSignature);
+            rightSigCell.setBorder(Rectangle.NO_BORDER);
+            rightSigCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+    
+            signatureTable.addCell(leftSigCell);
+            signatureTable.addCell(rightSigCell);
+            document.add(signatureTable);
     
             document.close();
             return file;
         }
+    }
+    
+    // Helper method to create grading system cells
+    private static PdfPCell createGradingSystemCell(String content) {
+        Paragraph paragraph = new Paragraph();
+        String[] lines = content.split("\n");
+        
+        for (int i = 0; i < lines.length; i++) {
+            Font font = (i == 0) ? HEADER_FONT : NORMAL_FONT; // First line is header
+            paragraph.add(new Phrase(lines[i] + (i < lines.length - 1 ? "\n" : ""), font));
+        }
+        
+        PdfPCell cell = new PdfPCell(paragraph);
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setPadding(5f);
+        return cell;
+    }
+    
+    // Helper method to get current date in MM/DD/YYYY format
+    private static String getCurrentDate() {
+        Calendar calendar = Calendar.getInstance();
+        int month = calendar.get(Calendar.MONTH) + 1;
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int year = calendar.get(Calendar.YEAR);
+        return String.format("%02d/%02d/%04d", month, day, year);
     }
 
     private static PdfPTable createSubjectsTable(int studentId) throws Exception {
@@ -370,14 +545,14 @@ public class Reports {
         // Query enrolled subjects with grades
         //right here
         String query = "SELECT s.ID, s.Description, " +
-                     "COALESCE(g.Prelim, 'N/A') as Prelim, " +
-                     "COALESCE(g.Midterm, 'N/A') as Midterm, " +
-                     "COALESCE(g.Final, 'N/A') as Final " +
-                     "FROM subjects s " +
-                     "LEFT JOIN Enroll e ON s.ID = e.subjid " +
-                     "LEFT JOIN Grades g ON e.eid = g.GradeID " +
-                     "WHERE e.studid = " + studentId + " " +
-                     "ORDER BY s.ID";
+        "IFNULL(g.Prelim, 'NULL') as Prelim, " +
+        "IFNULL(g.Midterm, 'NULL') as Midterm, " +
+        "IFNULL(g.Final, 'NULL') as Final " +
+        "FROM subjects s " +
+        "LEFT JOIN Enroll e ON s.ID = e.subjid " +
+        "LEFT JOIN Grades g ON e.eid = g.GradeID " +
+        "WHERE e.studid = " + studentId + " " +
+        "ORDER BY s.ID";
 
         ESystem.rs = ESystem.st.executeQuery(query);
 
@@ -477,5 +652,21 @@ public class Reports {
                 "Error", 
                 JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private static Phrase createBoldLabel(String label, String value) {
+        Phrase phrase = new Phrase();
+        
+        // Create bold font explicitly
+        Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+        Chunk labelChunk = new Chunk(label + ": ", boldFont);
+        phrase.add(labelChunk);
+        
+        // Create normal font explicitly
+        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
+        Chunk valueChunk = new Chunk(value != null ? value : "N/A", normalFont);
+        phrase.add(valueChunk);
+        
+        return phrase;
     }
 }
